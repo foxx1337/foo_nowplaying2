@@ -45,7 +45,7 @@ Get it on GitHub from
    ```pwsh
    mkdir build
    cd build
-   cmake .. -AWin32 -Dfoobar2000sdk="path\to\sdk"
+   cmake .. -AWin32 -Dfoobar2000sdk="path\to\sdk" -Dwtl="other\path\to\wtl"
    ```
 
 4. Open the generated **foo_nowplaying2.sln** solution, build it and use the

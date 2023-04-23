@@ -1,12 +1,17 @@
 add_library(
     foo_nowplaying2 SHARED
     main.cpp
+    preferences.cpp
+    resource.h
+    foo_nowplaying2.rc
 )
 
 target_link_libraries(
     foo_nowplaying2
-    PRIVATE foobar2000 Shlwapi.lib
+    PRIVATE foobar2000 wtl Shlwapi.lib
 )
+
+source_group("Resource Files" foo_nowplaying2.rc)
 
 # Link statically, the foobar2000 sdk doesn't do it
 #[[

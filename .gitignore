@@ -31,5 +31,8 @@
 *.out
 *.app
 
+# Visual Studio files
+*.aps
+
 # CMake staging builds
 build*/
