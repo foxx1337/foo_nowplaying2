@@ -65,8 +65,9 @@ function(combine_debug_optimized base_name)
 endfunction()
 
 combine_debug_optimized(foobar2000_SDK)
-combine_debug_optimized(libPPUI)
+combine_debug_optimized(foobar2000_sdk_helpers)
 combine_debug_optimized(foobar2000_component_client)
+combine_debug_optimized(libPPUI)
 combine_debug_optimized("shared-${platform}")
 combine_debug_optimized(pfc)
 
@@ -75,8 +76,9 @@ find_package_handle_standard_args(
     foobar2000
     DEFAULT_MSG
     FOOBAR2000_SDK_LIBS
-    LIBPPUI_LIBS
+    FOOBAR2000_SDK_HELPERS_LIBS
     FOOBAR2000_COMPONENT_CLIENT_LIBS
+    LIBPPUI_LIBS
     SHARED-${uplatform}_LIBS
     PFC_LIBS
     FOOBAR2000_SDK_INCLUDE_DIR
@@ -102,8 +104,9 @@ if(FOOBAR2000_FOUND)
     set(FOOBAR2000_LIBS ${FOOBAR2000_SDK_LIBS} ${FOOBAR2000_COMPONENT_CLIENT_LIBS} ${SHARED-${uplatform}_LIBS} ${PFC_LIBS})
 
     create_foobar2000_namespace_lib(foobar2000_SDK ${FOOBAR2000_SDK_INCLUDE_DIR})
-    create_foobar2000_namespace_lib(libPPUI ${FOOBAR2000_LIBPPUI_INCLUDE_DIR})
+    create_foobar2000_namespace_lib(foobar2000_sdk_helpers ${FOOBAR2000_SDK_INCLUDE_DIR})
     create_foobar2000_namespace_lib(foobar2000_component_client ${FOOBAR2000_SDK_INCLUDE_DIR})
+    create_foobar2000_namespace_lib(libPPUI ${FOOBAR2000_LIBPPUI_INCLUDE_DIR})
     create_foobar2000_namespace_lib(shared-${platform} ${FOOBAR2000_SDK_INCLUDE_DIR})
     create_foobar2000_namespace_lib(pfc ${FOOBAR2000_PFC_INCLUDE_DIR})
 
@@ -113,8 +116,9 @@ if(FOOBAR2000_FOUND)
             TARGET foobar2000::foobar2000 PROPERTY
             INTERFACE_LINK_LIBRARIES
                 foobar2000::foobar2000_SDK
-                foobar2000::libPPUI
+                foobar2000::foobar2000_sdk_helpers
                 foobar2000::foobar2000_component_client
+                foobar2000::libPPUI
                 foobar2000::shared-${platform}
                 foobar2000::pfc
         )
