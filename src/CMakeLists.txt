@@ -2,7 +2,9 @@ add_library(
     foo_nowplaying2 SHARED
     main.cpp
     preferences.cpp
+    nowplaying.cpp
     resource.h
+    preferences.h
     foo_nowplaying2.rc
 )
 
