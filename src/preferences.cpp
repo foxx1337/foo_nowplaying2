@@ -44,6 +44,7 @@ public:
     void reset() override
     {
         // reset to default
+        playback_format = default_playback_format;
     }
 
 

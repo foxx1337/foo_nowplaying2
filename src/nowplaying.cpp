@@ -60,8 +60,7 @@ private:
 
 void NowPlaying::SetScript(const pfc::string8& script)
 {
-    //m_script.release();
-    static_api_ptr_t<titleformat_compiler>()->compile(m_script, script.c_str());
+    titleformat_compiler::get()->compile(m_script, script.c_str());
 }
 
 void NowPlaying::Update(const char* event)
