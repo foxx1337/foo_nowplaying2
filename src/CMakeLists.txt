@@ -5,6 +5,7 @@ add_library(
     nowplaying.cpp
     resource.h
     preferences.h
+    nowplaying.h
     foo_nowplaying2.rc
 )
 

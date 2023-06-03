@@ -2,6 +2,7 @@
 #include <helpers/atl-misc.h>
 #include <helpers/DarkMode.h>
 
+#include "nowplaying.h"
 #include "resource.h"
 
 // {CA730BF5-9B42-403D-BB57-27C430D9086E}
@@ -13,12 +14,22 @@ static constexpr char default_playback_format[]
 
 cfg_string playback_format(guid_playback_format, default_playback_format);
 
+// {E8EB0BA5-877E-4F43-A99A-C23F145578F2}
+static constexpr GUID guid_file_path
+{ 0xe8eb0ba5, 0x877e, 0x4f43, { 0xa9, 0x9a, 0xc2, 0x3f, 0x14, 0x55, 0x78, 0xf2 } };
+
+static constexpr char default_file_path[]
+{""};
+
+cfg_string file_path(guid_file_path, default_file_path);
+
+
 class Preferences : public CDialogImpl<Preferences>, public preferences_page_instance, private play_callback_impl_base
 {
 public:
     // Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us.
     Preferences(preferences_page_callback::ptr callback) :
-        callback_(callback), format_(playback_format.get()) {}
+        callback_(callback), format_(playback_format.get()), path_(file_path) {}
 
     // Note that we don't bother doing anything regarding destruction of our class.
     // The host ensures that our dialog is destroyed first, then the last reference to our preferences_page_instance object is released, causing our object to be deleted.
@@ -39,12 +50,16 @@ public:
     void apply() override
     {
         // Apply changes.
+        file_path = path_;
         playback_format = format_;
+        g_nowplaying2.get_static_instance().SetScript(format_);
     }
 
     void reset() override
     {
         // Reset to default.
+        path_ = default_file_path;
+        uSetDlgItemText(*this, IDC_PATH, path_);
         format_ = default_playback_format;
         uSetDlgItemText(*this, IDC_FORMAT, format_);
         update_preview();
@@ -57,6 +72,7 @@ public:
         MSG_WM_DESTROY(OnDestroyDialog)
         COMMAND_HANDLER_EX(IDC_PATH, EN_CHANGE, OnPathChange)
         COMMAND_HANDLER_EX(IDC_FORMAT, EN_CHANGE, OnFormatChange)
+        COMMAND_HANDLER_EX(IDC_BUTTON_BROWSE, BN_CLICKED, OnBrowse)
     END_MSG_MAP()
 
 private:
@@ -65,83 +81,36 @@ private:
     // Dark mode hooks object, must be a member of dialog class.
     fb2k::CDarkModeHooks dark_mode_;
 
+    pfc::string8 path_;
+
     pfc::string8 format_;
 
     titleformat_object::ptr script_;
 
+    // WTL handlers.
+    BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
+    void OnDestroyDialog();
+    void OnPathChange(UINT, int, CWindow);
+    void OnFormatChange(UINT, int, CWindow);
+    void OnBrowse(UINT, int, HWND);
 
-    BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
-    {
-        // Enable dark mode
-        // One call does it all, applies all relevant hacks automatically
-        dark_mode_.AddDialogWithControls(*this);
-
-        uSetDlgItemText(*this, IDC_FORMAT, format_);
-        titleformat_compiler::get()->compile_safe_ex(script_, playback_format.c_str(), nullptr);
-
-        play_callback_manager::get()->register_callback(this,
-                                                        flag_on_playback_new_track | flag_on_playback_pause |
-                                                            flag_on_playback_stop | flag_on_playback_seek |
-                                                            flag_on_playback_time,
-                                                        true);
-
-        // Don't set keyboard focus to the dialog
-        return FALSE;
-    }
-
-    void OnDestroyDialog()
-    {
-        play_callback_manager::get()->unregister_callback(this);
-    }
-
-    void OnPathChange(UINT, int, CWindow)
-    {
-        // Get the text from the edit control
-        pfc::string8 path;
-        uGetDlgItemText(*this, IDC_PATH, path);
-
-        // Notify the host that the preferences have changed
-        callback_->on_state_changed();
-    }
-
-    void OnFormatChange(UINT, int, CWindow)
-    {
-        // Get the text from the edit control
-        uGetDlgItemText(*this, IDC_FORMAT, format_);
-
-        // Save the text to the config
-        titleformat_compiler::get()->compile_safe_ex(script_, format_, nullptr);
-
-        update_preview();
-
-        // Notify the host that the preferences have changed
-        callback_->on_state_changed();
-    }
-
-    	// Playback callback methods.
-    void on_playback_starting(play_control::t_track_command p_command, bool p_paused) { update_preview(); }
+    // Playback callback methods.
+    void on_playback_starting(play_control::t_track_command p_command, bool p_paused) {}
     void on_playback_new_track(metadb_handle_ptr p_track) { update_preview(); }
     void on_playback_stop(play_control::t_stop_reason p_reason) { update_preview(); }
-    void on_playback_seek(double p_time) { /* update(); */ }
+    void on_playback_seek(double p_time) {}
     void on_playback_pause(bool p_state) { update_preview(); }
-    void on_playback_edited(metadb_handle_ptr p_track) { update_preview(); }
-    void on_playback_dynamic_info(const file_info& p_info) { update_preview(); }
-    void on_playback_dynamic_info_track(const file_info& p_info) { update_preview(); }
-    void on_playback_time(double p_time) { update_preview(); }
+    void on_playback_edited(metadb_handle_ptr p_track) {}
+    void on_playback_dynamic_info(const file_info& p_info) {}
+    void on_playback_dynamic_info_track(const file_info& p_info) {}
+    void on_playback_time(double p_time) {}
     void on_volume_change(float p_new_val) {}
 
-    void update_preview()
-    {
-        pfc::string8 preview;
-        playback_control::get()->playback_format_title(nullptr, preview, script_, nullptr,
-                                                       playback_control::display_level_all);
-        uSetDlgItemText(*this, IDC_PREVIEW, preview);
-        console::printf(">>>>>> preferences %s", preview.c_str());
-    }
+    void update_preview();
 
     t_uint32 changed_flag()
     {
-        if (format_ != playback_format)
+        if (format_ != playback_format || path_ != file_path)
         {
             return preferences_state::changed;
         }
@@ -151,6 +120,72 @@ private:
         }
     }
 };
+
+BOOL Preferences::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
+{
+    // Enable dark mode.
+    // One call does it all, applies all relevant hacks automatically.
+    dark_mode_.AddDialogWithControls(*this);
+
+    uSetDlgItemText(*this, IDC_PATH, path_);
+    uSetDlgItemText(*this, IDC_FORMAT, format_);
+    titleformat_compiler::get()->compile_safe_ex(script_, playback_format.c_str(), nullptr);
+
+    play_callback_manager::get()->register_callback(
+        this,
+        flag_on_playback_new_track | flag_on_playback_pause |flag_on_playback_stop,
+        true
+        );
+
+    // Don't set keyboard focus to the dialog.
+    return FALSE;
+}
+
+void Preferences::OnDestroyDialog()
+{
+    play_callback_manager::get()->unregister_callback(this);
+}
+
+void Preferences::OnPathChange(UINT, int, CWindow)
+{
+    // Get the text from the edit control.
+    uGetDlgItemText(*this, IDC_PATH, path_);
+
+    // Notify the host that the preferences have changed.
+    callback_->on_state_changed();
+}
+
+void Preferences::OnFormatChange(UINT, int, CWindow)
+{
+    // Get the text from the edit control.
+    uGetDlgItemText(*this, IDC_FORMAT, format_);
+
+    // Save the text to the config
+    titleformat_compiler::get()->compile_safe_ex(script_, format_, nullptr);
+
+    update_preview();
+
+    // Notify the host that the preferences have changed.
+    callback_->on_state_changed();
+}
+
+void Preferences::OnBrowse(UINT, int, HWND)
+{
+    pfc::string8 new_path;
+    if (uGetOpenFileName(*this, "All files|*.*", 0, nullptr, "Save file...", nullptr, new_path, TRUE))
+    {
+        path_ = new_path;
+        uSetDlgItemText(*this, IDC_PATH, path_);
+    }
+}
+
+void Preferences::update_preview()
+{
+    pfc::string8 preview;
+    playback_control::get()->playback_format_title(nullptr, preview, script_, nullptr,
+                                                   playback_control::display_level_all);
+    uSetDlgItemText(*this, IDC_PREVIEW, preview);
+}
 
 // preferences_page_impl<> helper deals with instantiation of our dialog; inherits from preferences_page_v3.
 class preferences_page_nowplaying2impl : public preferences_page_impl<Preferences>
