@@ -7,6 +7,12 @@ class NowPlaying : public play_callback_static
 public:
     void SetScript(const pfc::string8& script);
 
+    pfc::string8 GetPlaybackString()
+    {
+        pfc::mutexScope reader(thread_lock_);
+        return playback_string_;
+    }
+
 private:
     // Playback callback methods.
     unsigned get_flags() override
@@ -55,24 +61,29 @@ private:
 
     void Update(const char* event);
 
-    titleformat_object::ptr m_script;
+    pfc::mutex thread_lock_;
+
+    pfc::string8 playback_string_;
+
+    titleformat_object::ptr script_;
 };
 
 void NowPlaying::SetScript(const pfc::string8& script)
 {
-    titleformat_compiler::get()->compile(m_script, script.c_str());
+    titleformat_compiler::get()->compile(script_, script.c_str());
 }
 
 void NowPlaying::Update(const char* event)
 {
     SetScript(playback_format.get());
-    pfc::string8 song;
-    playback_control::get()->playback_format_title(nullptr, song, m_script, nullptr,
+
+    pfc::mutexScope writer(thread_lock_);
+    playback_control::get()->playback_format_title(nullptr, playback_string_, script_, nullptr,
                                                    playback_control::display_level_all);
-    console::printf("nowplaying2 %s - %s", event, song.c_str());
+    // console::printf("nowplaying2 %s - %s", event, playback_string_.c_str());
 
     // This is how one gets a wchar_t string.
-    const pfc::stringcvt::string_wide_from_utf8_t buffer(song);
+    const pfc::stringcvt::string_wide_from_utf8_t buffer(playback_string_);
 }
 
 
