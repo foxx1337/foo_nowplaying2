@@ -2,7 +2,7 @@
 #include <helpers/atl-misc.h>
 #include <helpers/DarkMode.h>
 
-#include "nowplaying.h"
+#include "NowPlaying.h"
 #include "resource.h"
 
 // {CA730BF5-9B42-403D-BB57-27C430D9086E}
@@ -52,7 +52,7 @@ public:
         // Apply changes.
         file_path = path_;
         playback_format = format_;
-        g_nowplaying2.get_static_instance().SetScript(format_);
+        g_nowplaying2.get_static_instance().refresh_settings(true);
     }
 
     void reset() override
@@ -131,11 +131,7 @@ BOOL Preferences::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
     uSetDlgItemText(*this, IDC_FORMAT, format_);
     titleformat_compiler::get()->compile_safe_ex(script_, playback_format.c_str(), nullptr);
 
-    play_callback_manager::get()->register_callback(
-        this,
-        flag_on_playback_new_track | flag_on_playback_pause |flag_on_playback_stop,
-        true
-        );
+    play_callback_manager::get()->register_callback(this, NowPlaying::playback_flags, true);
 
     // Don't set keyboard focus to the dialog.
     return FALSE;
