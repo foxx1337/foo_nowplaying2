@@ -21,10 +21,6 @@ void NowPlaying::update()
     {
         return;
     }
-    if (script_.is_empty())
-    {
-        refresh_settings();
-    }
 
     playback_control::get()->playback_format_title(nullptr, playback_string_, script_, nullptr,
                                                    playback_control::display_level_all);
@@ -61,5 +57,12 @@ void NowPlaying::update()
     }
 }
 
+class InitQuit : public initquit
+{
+public:
+    void on_init() override { g_nowplaying2.get_static_instance().refresh_settings(); }
+    void on_quit() override {}
+};
 
 service_factory_single_t<NowPlaying> g_nowplaying2;
+static initquit_factory_t<InitQuit> g_initquit;
