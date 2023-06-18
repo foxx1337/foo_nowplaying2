@@ -27,6 +27,8 @@ private:
 
     void update();
 
+    void write_file();
+
     pfc::string8 playback_string_;
     std::wstring file_;
     titleformat_object::ptr script_;

@@ -2,8 +2,10 @@
 #include <helpers/atl-misc.h>
 #include <helpers/DarkMode.h>
 
+#include "preferences.h"
 #include "NowPlaying.h"
 #include "resource.h"
+
 
 // {CA730BF5-9B42-403D-BB57-27C430D9086E}
 static constexpr GUID guid_playback_format
@@ -13,6 +15,7 @@ static constexpr char default_playback_format[]
 { "%artist% - %title%" };
 
 cfg_string playback_format(guid_playback_format, default_playback_format);
+
 
 // {E8EB0BA5-877E-4F43-A99A-C23F145578F2}
 static constexpr GUID guid_file_path
@@ -24,12 +27,39 @@ static constexpr char default_file_path[]
 cfg_string file_path(guid_file_path, default_file_path);
 
 
+// {75B61323-4ABB-4692-9483-800B00A30E6B}
+static constexpr GUID guid_file_encoding
+{ 0x75b61323, 0x4abb, 0x4692, { 0x94, 0x83, 0x80, 0xb, 0x0, 0xa3, 0xe, 0x6b } };
+
+const std::vector<encoding_info> encodings
+{
+    encoding_info{encoding::UTF8, L"UTF-8", {0xef, 0xbb, 0xbf}},
+    encoding_info{encoding::UTF16LE, L"UTF-16 LE", {0xff, 0xfe}}
+};
+
+static constexpr t_uint32 default_file_encoding = static_cast<t_uint32>(encoding::UTF8);
+
+cfg_uint file_encoding(guid_file_encoding, default_file_encoding);
+
+
+// {25E80CCB-B77E-428C-AC0C-89DC08531C9B}
+static constexpr GUID guid_with_bom
+{ 0x25e80ccb, 0xb77e, 0x428c, { 0xac, 0xc, 0x89, 0xdc, 0x8, 0x53, 0x1c, 0x9b } };
+
+static constexpr bool default_with_bom = false;
+
+cfg_bool with_bom(guid_with_bom, default_with_bom);
+
+
 class Preferences : public CDialogImpl<Preferences>, public preferences_page_instance, private play_callback_impl_base
 {
 public:
     // Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us.
     Preferences(preferences_page_callback::ptr callback) :
-        callback_(callback), format_(playback_format.get()), path_(file_path) {}
+        callback_(callback), path_(file_path.get()), format_(playback_format.get()), file_encoding_(file_encoding),
+        with_bom_(with_bom)
+    {
+    }
 
     // Note that we don't bother doing anything regarding destruction of our class.
     // The host ensures that our dialog is destroyed first, then the last reference to our preferences_page_instance object is released, causing our object to be deleted.
@@ -52,6 +82,8 @@ public:
         // Apply changes.
         file_path = path_;
         playback_format = format_;
+        file_encoding = file_encoding_;
+        with_bom = with_bom_;
         g_nowplaying2.get_static_instance().refresh_settings(true);
     }
 
@@ -62,6 +94,12 @@ public:
         uSetDlgItemText(*this, IDC_PATH, path_);
         format_ = default_playback_format;
         uSetDlgItemText(*this, IDC_FORMAT, format_);
+        file_encoding_ = default_file_encoding;
+        CComboBox file_encoding{GetDlgItem(IDC_FILE_ENCODING)};
+        file_encoding.SetCurSel(file_encoding_);
+        with_bom_ = default_with_bom;
+        CCheckBox with_bom{GetDlgItem(IDC_WITH_BOM)};
+        with_bom.SetCheck(with_bom_ ? BST_CHECKED : BST_UNCHECKED);
         update_preview();
     }
 
@@ -73,6 +111,8 @@ public:
         COMMAND_HANDLER_EX(IDC_PATH, EN_CHANGE, OnPathChange)
         COMMAND_HANDLER_EX(IDC_FORMAT, EN_CHANGE, OnFormatChange)
         COMMAND_HANDLER_EX(IDC_BUTTON_BROWSE, BN_CLICKED, OnBrowse)
+        COMMAND_HANDLER_EX(IDC_FILE_ENCODING, CBN_SELCHANGE, OnFileEncodingChange)
+        COMMAND_HANDLER_EX(IDC_WITH_BOM, BN_CLICKED, OnFileEncodingChange)
     END_MSG_MAP()
 
 private:
@@ -87,12 +127,17 @@ private:
 
     titleformat_object::ptr script_;
 
+    t_uint32 file_encoding_;
+
+    bool with_bom_;
+
     // WTL handlers.
     BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
     void OnDestroyDialog();
     void OnPathChange(UINT, int, CWindow);
     void OnFormatChange(UINT, int, CWindow);
-    void OnBrowse(UINT, int, HWND);
+    void OnBrowse(UINT, int, CWindow);
+    void OnFileEncodingChange(UINT, int, CWindow);
 
     // Playback callback methods.
     void on_playback_starting(play_control::t_track_command p_command, bool p_paused) {}
@@ -110,7 +155,7 @@ private:
 
     t_uint32 changed_flag()
     {
-        if (format_ != playback_format || path_ != file_path)
+        if (format_ != playback_format || path_ != file_path || file_encoding_ != file_encoding || with_bom_ != with_bom)
         {
             return preferences_state::changed;
         }
@@ -130,6 +175,16 @@ BOOL Preferences::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
     uSetDlgItemText(*this, IDC_PATH, path_);
     uSetDlgItemText(*this, IDC_FORMAT, format_);
     titleformat_compiler::get()->compile_safe_ex(script_, playback_format.c_str(), nullptr);
+
+    CComboBox file_encoding{GetDlgItem(IDC_FILE_ENCODING)};
+    for (const auto& encoding : encodings)
+    {
+        file_encoding.AddString(encoding.name);
+    }
+    file_encoding.SetCurSel(file_encoding_);
+
+    CCheckBox with_bom{GetDlgItem(IDC_WITH_BOM)};
+    with_bom.SetCheck(with_bom_ ? BST_CHECKED : BST_UNCHECKED);
 
     play_callback_manager::get()->register_callback(this, NowPlaying::playback_flags, true);
 
@@ -165,7 +220,7 @@ void Preferences::OnFormatChange(UINT, int, CWindow)
     callback_->on_state_changed();
 }
 
-void Preferences::OnBrowse(UINT, int, HWND)
+void Preferences::OnBrowse(UINT, int, CWindow)
 {
     pfc::string8 new_path;
     if (uGetOpenFileName(*this, "All files|*.*", 0, nullptr, "Save file...", nullptr, new_path, TRUE))
@@ -173,6 +228,15 @@ void Preferences::OnBrowse(UINT, int, HWND)
         path_ = new_path;
         uSetDlgItemText(*this, IDC_PATH, path_);
     }
+}
+
+void Preferences::OnFileEncodingChange(UINT, int, CWindow)
+{
+    CComboBox file_encoding{GetDlgItem(IDC_FILE_ENCODING)};
+    file_encoding_ = file_encoding.GetCurSel();
+    CCheckBox with_bom{GetDlgItem(IDC_WITH_BOM)};
+    with_bom_ = with_bom.GetCheck() == BST_CHECKED;
+    callback_->on_state_changed();
 }
 
 void Preferences::update_preview()
