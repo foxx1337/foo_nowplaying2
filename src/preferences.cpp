@@ -51,13 +51,22 @@ static constexpr bool default_with_bom = false;
 cfg_bool with_bom(guid_with_bom, default_with_bom);
 
 
+// {22F1D723-9487-4791-851B-1D2C74E0F4A0}
+static const GUID guid_file_append
+{ 0x22f1d723, 0x9487, 0x4791, { 0x85, 0x1b, 0x1d, 0x2c, 0x74, 0xe0, 0xf4, 0xa0 } };
+
+static constexpr bool default_file_append = false;
+
+cfg_bool file_append(guid_file_append, default_file_append);
+
+
 class Preferences : public CDialogImpl<Preferences>, public preferences_page_instance, private play_callback_impl_base
 {
 public:
     // Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us.
     Preferences(preferences_page_callback::ptr callback) :
         callback_(callback), path_(file_path.get()), format_(playback_format.get()), file_encoding_(file_encoding),
-        with_bom_(with_bom)
+        with_bom_(with_bom), file_append_(file_append)
     {
     }
 
@@ -84,6 +93,7 @@ public:
         playback_format = format_;
         file_encoding = file_encoding_;
         with_bom = with_bom_;
+        file_append = file_append_;
         g_nowplaying2.get_static_instance().refresh_settings(true);
     }
 
@@ -92,14 +102,22 @@ public:
         // Reset to default.
         path_ = default_file_path;
         uSetDlgItemText(*this, IDC_PATH, path_);
+
         format_ = default_playback_format;
         uSetDlgItemText(*this, IDC_FORMAT, format_);
+
         file_encoding_ = default_file_encoding;
         CComboBox file_encoding{GetDlgItem(IDC_FILE_ENCODING)};
         file_encoding.SetCurSel(file_encoding_);
+
         with_bom_ = default_with_bom;
         CCheckBox with_bom{GetDlgItem(IDC_WITH_BOM)};
         with_bom.SetCheck(with_bom_ ? BST_CHECKED : BST_UNCHECKED);
+
+        file_append_ = default_file_append;
+        CCheckBox file_append{GetDlgItem(IDC_FILE_APPEND)};
+        file_append.SetCheck(file_append_ ? BST_CHECKED : BST_UNCHECKED);
+
         update_preview();
     }
 
@@ -113,6 +131,7 @@ public:
         COMMAND_HANDLER_EX(IDC_BUTTON_BROWSE, BN_CLICKED, OnBrowse)
         COMMAND_HANDLER_EX(IDC_FILE_ENCODING, CBN_SELCHANGE, OnFileEncodingChange)
         COMMAND_HANDLER_EX(IDC_WITH_BOM, BN_CLICKED, OnFileEncodingChange)
+        COMMAND_HANDLER_EX(IDC_FILE_APPEND, BN_CLICKED, OnFileAppendChange)
     END_MSG_MAP()
 
 private:
@@ -131,6 +150,8 @@ private:
 
     bool with_bom_;
 
+    bool file_append_;
+
     // WTL handlers.
     BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
     void OnDestroyDialog();
@@ -138,6 +159,7 @@ private:
     void OnFormatChange(UINT, int, CWindow);
     void OnBrowse(UINT, int, CWindow);
     void OnFileEncodingChange(UINT, int, CWindow);
+    void OnFileAppendChange(UINT, int, CWindow);
 
     // Playback callback methods.
     void on_playback_starting(play_control::t_track_command p_command, bool p_paused) {}
@@ -155,7 +177,8 @@ private:
 
     t_uint32 changed_flag()
     {
-        if (format_ != playback_format || path_ != file_path || file_encoding_ != file_encoding || with_bom_ != with_bom)
+        if (format_ != playback_format || path_ != file_path || file_encoding_ != file_encoding ||
+            with_bom_ != with_bom || file_append_ != file_append)
         {
             return preferences_state::changed;
         }
@@ -185,6 +208,9 @@ BOOL Preferences::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
     CCheckBox with_bom{GetDlgItem(IDC_WITH_BOM)};
     with_bom.SetCheck(with_bom_ ? BST_CHECKED : BST_UNCHECKED);
+
+    CCheckBox file_append{GetDlgItem(IDC_FILE_APPEND)};
+    file_append.SetCheck(file_append_ ? BST_CHECKED : BST_UNCHECKED);
 
     play_callback_manager::get()->register_callback(this, NowPlaying::playback_flags, true);
 
@@ -236,6 +262,13 @@ void Preferences::OnFileEncodingChange(UINT, int, CWindow)
     file_encoding_ = file_encoding.GetCurSel();
     CCheckBox with_bom{GetDlgItem(IDC_WITH_BOM)};
     with_bom_ = with_bom.GetCheck() == BST_CHECKED;
+    callback_->on_state_changed();
+}
+
+void Preferences::OnFileAppendChange(UINT, int, CWindow)
+{
+    CCheckBox file_append{GetDlgItem(IDC_FILE_APPEND)};
+    file_append_ = file_append.GetCheck() == BST_CHECKED;
     callback_->on_state_changed();
 }
 

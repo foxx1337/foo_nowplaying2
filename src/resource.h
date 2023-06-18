@@ -9,8 +9,9 @@
 #define IDC_PREVIEW                     1005
 #define IDC_FORMAT                      1006
 #define IDC_FILE_ENCODING               1012
-#define IDC_CHECK1                      1013
 #define IDC_WITH_BOM                    1013
+#define IDC_CHECK1                      1014
+#define IDC_FILE_APPEND                 1014
 
 // Next default values for new objects
 // 
@@ -18,7 +19,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        104
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1014
+#define _APS_NEXT_CONTROL_VALUE         1015
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

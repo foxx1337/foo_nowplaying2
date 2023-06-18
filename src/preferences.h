@@ -27,3 +27,5 @@ extern cfg_string file_path;
 extern cfg_uint file_encoding;
 
 extern cfg_bool with_bom;
+
+extern cfg_bool file_append;

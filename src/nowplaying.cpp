@@ -47,6 +47,11 @@ void NowPlaying::update()
 
 void NowPlaying::write_file()
 {
+    // Make sure no empty line is appended to the file on stop.
+    if (file_append && playback_string_.is_empty())
+    {
+        return;
+    }
     // Only do one write and let all others fail.
     if (file_lock_.tryEnter())
     {
@@ -54,13 +59,18 @@ void NowPlaying::write_file()
                         GENERIC_WRITE,
                         FILE_SHARE_READ | FILE_SHARE_WRITE,
                         nullptr,
-                        OPEN_ALWAYS,
+                        file_append ? OPEN_ALWAYS : CREATE_ALWAYS,
                         FILE_ATTRIBUTE_NORMAL,
                         nullptr);
         if (file != INVALID_HANDLE_VALUE)
         {
+            if (file_append)
+            {
+                SetFilePointer(file, 0, nullptr, FILE_END);
+            }
             const std::vector<unsigned char> message =
-                to_encoding(playback_string_, static_cast<encoding>(file_encoding.get_value()), with_bom);
+                to_encoding(playback_string_ + (file_append ? "\r\n" : ""),
+                            static_cast<encoding>(file_encoding.get_value()), with_bom && !file_append);
             size_t pos = 0;
             while (pos < message.size())
             {
