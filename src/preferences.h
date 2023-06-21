@@ -13,9 +13,9 @@ enum class encoding
 
 struct encoding_info
 {
-    encoding encoding;
+    const encoding encoding;
     const wchar_t* name;
-    std::vector<unsigned char> bom;
+    const std::vector<unsigned char> bom;
 };
 
 extern const std::vector<encoding_info> encodings;
