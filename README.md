@@ -31,8 +31,8 @@ Get it on GitHub from
    **Additional Include Directories**.
 
 2. Build the foobar2000 sample project for `Debug` and `Release`. The included
-   settings target **x86**. It's fine to generate configurations for **x64** and
-   **ARM64** based on **x86**.
+   settings target **Win32**. It's fine to generate configurations for **x64** and
+   **ARM64EC** based on **Win32**.
 
    Project **pfc** is special: for **Debug** and, respectively, **Release**, for
    any **Active solution platform**, select **Debug FB2k** and, respectively,
@@ -46,6 +46,16 @@ Get it on GitHub from
    mkdir build
    cd build
    cmake .. -AWin32 -Dfoobar2000sdk="path\to\sdk" -Dwtl="other\path\to\wtl"
+
+   cd ..
+   mkdir build64
+   cd build64
+   cmake .. -Ax64 -Dfoobar2000sdk="path\to\sdk" -Dwtl="other\path\to\wtl"
+
+   cd ..
+   mkdir buildARM64EC
+   cd buildARM64EC
+   cmake .. -AARM64EC -Dfoobar2000sdk="path\to\sdk" -Dwtl="other\path\to\wtl"
    ```
 
 4. Open the generated **foo_nowplaying2.sln** solution, build it and use the
