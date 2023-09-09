@@ -60,13 +60,22 @@ static constexpr bool default_file_append = false;
 cfg_bool file_append(guid_file_append, default_file_append);
 
 
+// {26D45612-B6EC-4B8D-BF27-251639114FA4}
+static constexpr GUID guid_max_lines
+{ 0x26d45612, 0xb6ec, 0x4b8d, { 0xbf, 0x27, 0x25, 0x16, 0x39, 0x11, 0x4f, 0xa4 } };
+
+static constexpr t_uint32 default_max_lines = 0;
+
+cfg_uint max_lines(guid_max_lines, default_max_lines);
+
+
 class Preferences : public CDialogImpl<Preferences>, public preferences_page_instance, private play_callback_impl_base
 {
 public:
     // Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us.
     Preferences(preferences_page_callback::ptr callback) :
-        callback_(callback), path_(file_path.get()), format_(playback_format.get()), file_encoding_(file_encoding),
-        with_bom_(with_bom), file_append_(file_append)
+        callback_(callback), path_(file_path.get()), format_(playback_format.get()), file_encoding_(static_cast<t_uint>(file_encoding)),
+        with_bom_(with_bom), file_append_(file_append), max_lines_(static_cast<t_uint>(max_lines))
     {
     }
 
@@ -94,6 +103,7 @@ public:
         file_encoding = file_encoding_;
         with_bom = with_bom_;
         file_append = file_append_;
+        max_lines = max_lines_;
         g_nowplaying2.get_static_instance().refresh_settings(true);
     }
 
@@ -118,6 +128,10 @@ public:
         CCheckBox file_append{GetDlgItem(IDC_FILE_APPEND)};
         file_append.SetCheck(file_append_ ? BST_CHECKED : BST_UNCHECKED);
 
+        max_lines_ = default_max_lines;
+        CEdit max_lines{GetDlgItem(IDC_MAX_LINES)};
+        max_lines.SetWindowText(L"");
+
         update_preview();
     }
 
@@ -132,6 +146,7 @@ public:
         COMMAND_HANDLER_EX(IDC_FILE_ENCODING, CBN_SELCHANGE, OnFileEncodingChange)
         COMMAND_HANDLER_EX(IDC_WITH_BOM, BN_CLICKED, OnFileEncodingChange)
         COMMAND_HANDLER_EX(IDC_FILE_APPEND, BN_CLICKED, OnFileAppendChange)
+        COMMAND_HANDLER_EX(IDC_MAX_LINES, EN_CHANGE, OnMaxLinesChange)
     END_MSG_MAP()
 
 private:
@@ -146,20 +161,23 @@ private:
 
     titleformat_object::ptr script_;
 
-    t_uint32 file_encoding_;
+    t_uint file_encoding_;
 
     bool with_bom_;
 
     bool file_append_;
 
+    t_uint max_lines_;
+
     // WTL handlers.
-    BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
+    BOOL OnInitDialog(CWindow, LPARAM);
     void OnDestroyDialog();
     void OnPathChange(UINT, int, CWindow);
     void OnFormatChange(UINT, int, CWindow);
     void OnBrowse(UINT, int, CWindow);
     void OnFileEncodingChange(UINT, int, CWindow);
     void OnFileAppendChange(UINT, int, CWindow);
+    void OnMaxLinesChange(UINT, int, CWindow);
 
     // Playback callback methods.
     void on_playback_starting(play_control::t_track_command p_command, bool p_paused) {}
@@ -178,7 +196,7 @@ private:
     t_uint32 changed_flag()
     {
         if (format_ != playback_format || path_ != file_path || file_encoding_ != file_encoding ||
-            with_bom_ != with_bom || file_append_ != file_append)
+            with_bom_ != with_bom || file_append_ != file_append || max_lines_ != max_lines)
         {
             return preferences_state::changed;
         }
@@ -189,7 +207,7 @@ private:
     }
 };
 
-BOOL Preferences::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
+BOOL Preferences::OnInitDialog(CWindow, LPARAM)
 {
     // Enable dark mode.
     // One call does it all, applies all relevant hacks automatically.
@@ -197,7 +215,7 @@ BOOL Preferences::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
     uSetDlgItemText(*this, IDC_PATH, path_);
     uSetDlgItemText(*this, IDC_FORMAT, format_);
-    titleformat_compiler::get()->compile_safe_ex(script_, playback_format.c_str(), nullptr);
+    titleformat_compiler::get()->compile_safe_ex(script_, playback_format.get(), nullptr);
 
     CComboBox file_encoding{GetDlgItem(IDC_FILE_ENCODING)};
     for (const auto& encoding : encodings)
@@ -211,6 +229,17 @@ BOOL Preferences::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
     CCheckBox file_append{GetDlgItem(IDC_FILE_APPEND)};
     file_append.SetCheck(file_append_ ? BST_CHECKED : BST_UNCHECKED);
+
+    CEdit max_lines{GetDlgItem(IDC_MAX_LINES)};
+    if (max_lines_ > 0)
+    {
+        max_lines.SetWindowText(std::to_wstring(max_lines_).c_str());
+    }
+
+    if (!file_append_)
+    {
+        max_lines.EnableWindow(FALSE);
+    }
 
     play_callback_manager::get()->register_callback(this, NowPlaying::playback_flags, true);
 
@@ -269,6 +298,23 @@ void Preferences::OnFileAppendChange(UINT, int, CWindow)
 {
     CCheckBox file_append{GetDlgItem(IDC_FILE_APPEND)};
     file_append_ = file_append.GetCheck() == BST_CHECKED;
+    CEdit max_lines{GetDlgItem(IDC_MAX_LINES)};
+    max_lines.EnableWindow(file_append_ ? TRUE : FALSE);
+    callback_->on_state_changed();
+}
+
+void Preferences::OnMaxLinesChange(UINT, int, CWindow)
+{
+    pfc::string8 lines;
+    uGetDlgItemText(*this, IDC_MAX_LINES, lines);
+    try
+    {
+        max_lines_ = std::stoul(lines.get_ptr());
+    }
+    catch (const std::invalid_argument&)
+    {
+        max_lines_ = 0;
+    }
     callback_->on_state_changed();
 }
 
