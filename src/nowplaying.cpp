@@ -151,7 +151,37 @@ bool truncate_file(HANDLE file, t_uint lines, encoding encoding, bool with_bom)
     return true;
 }
 
-void NowPlaying::update()
+//! 
+//! @returns handle to the first song in the queue, or the song after the current one in the playlist if no queue.
+metadb_handle_ptr get_next_handle(metadb_handle_ptr track)
+{
+    pfc::list_t<t_playback_queue_item> queue;
+    playlist_manager::get()->queue_get_contents(queue);
+    if (queue.size() >= 1)
+    {
+        return queue.begin()->m_handle;
+    }
+
+    if (strcmp(playlist_manager::get()->playback_order_get_name(playlist_manager::get()->playback_order_get_active()),
+               "Default") == 0)
+    {
+        t_size playlist;
+        t_size index;
+        bool have_song = true;
+        if (!playlist_manager::get()->get_playing_item_location(&playlist, &index))
+        {
+            playlist = playlist_manager::get()->get_playing_playlist();
+            have_song = playlist_manager::get()->playlist_find_item(playlist, track, index);
+        }
+        if (have_song && index + 1 < playlist_manager::get()->playlist_get_item_count(playlist))
+        {
+            return playlist_manager::get()->playlist_get_item_handle(playlist, index + 1);
+        }
+    }
+    return nullptr;
+}
+
+void NowPlaying::update(metadb_handle_ptr track)
 {
     if (playback_format.get().length() == 0 || file_path.get().length() == 0)
     {
@@ -160,6 +190,19 @@ void NowPlaying::update()
 
     playback_control::get()->playback_format_title(nullptr, playback_string_, script_, nullptr,
                                                    playback_control::display_level_all);
+
+    auto next = get_next_handle(track);
+    if (next.is_valid())
+    {
+        pfc::string8 queue_string;
+        titleformat_object::ptr new_script;
+        titleformat_compiler::get()->compile_safe(new_script, "%filename%");
+        bool formatted = next->format_title(nullptr, queue_string, new_script, nullptr);
+    }
+
+    const char* order =
+        playlist_manager::get()->playback_order_get_name(playlist_manager::get()->playback_order_get_active());
+    // "Default"
 
     write_file();
 }
