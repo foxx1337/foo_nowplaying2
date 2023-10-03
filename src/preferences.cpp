@@ -2,6 +2,10 @@
 #include <helpers/atl-misc.h>
 #include <helpers/DarkMode.h>
 
+#include <atlctrlx.h>
+
+#include <Uxtheme.h>
+
 #include "preferences.h"
 #include "NowPlaying.h"
 #include "resource.h"
@@ -69,75 +73,22 @@ static constexpr t_uint32 default_max_lines = 0;
 cfg_uint max_lines(guid_max_lines, default_max_lines);
 
 
-class Preferences : public CDialogImpl<Preferences>, public preferences_page_instance, private play_callback_impl_base
+class TabNowPlaying : public CDialogImpl<TabNowPlaying>, private play_callback_impl_base
 {
 public:
-    // Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us.
-    Preferences(preferences_page_callback::ptr callback) :
-        callback_(callback), path_(file_path.get()), format_(playback_format.get()), file_encoding_(static_cast<t_uint>(file_encoding)),
-        with_bom_(with_bom), file_append_(file_append), max_lines_(static_cast<t_uint>(max_lines))
+    TabNowPlaying(preferences_page_callback::ptr callback) :
+        callback_(callback), path_(file_path.get()), format_(playback_format.get()),
+        file_encoding_(static_cast<t_uint>(file_encoding)), with_bom_(with_bom),
+        file_append_(file_append), max_lines_(static_cast<t_uint>(max_lines))
     {
     }
 
-    // Note that we don't bother doing anything regarding destruction of our class.
-    // The host ensures that our dialog is destroyed first, then the last reference to our preferences_page_instance object is released, causing our object to be deleted.
-
-
-    // Dialog resource ID.
     enum
     {
-        IDD = IDD_PREFERENCES
+        IDD = IDD_NOWPLAYING
     };
 
-
-    t_uint32 get_state() override
-    {
-        return preferences_state::resettable | preferences_state::dark_mode_supported | changed_flag();
-    }
-
-    void apply() override
-    {
-        // Apply changes.
-        file_path = path_;
-        playback_format = format_;
-        file_encoding = file_encoding_;
-        with_bom = with_bom_;
-        file_append = file_append_;
-        max_lines = max_lines_;
-        g_nowplaying2.get_static_instance().refresh_settings(true);
-    }
-
-    void reset() override
-    {
-        // Reset to default.
-        path_ = default_file_path;
-        uSetDlgItemText(*this, IDC_PATH, path_);
-
-        format_ = default_playback_format;
-        uSetDlgItemText(*this, IDC_FORMAT, format_);
-
-        file_encoding_ = default_file_encoding;
-        CComboBox file_encoding{GetDlgItem(IDC_FILE_ENCODING)};
-        file_encoding.SetCurSel(file_encoding_);
-
-        with_bom_ = default_with_bom;
-        CCheckBox with_bom{GetDlgItem(IDC_WITH_BOM)};
-        with_bom.SetCheck(with_bom_ ? BST_CHECKED : BST_UNCHECKED);
-
-        file_append_ = default_file_append;
-        CCheckBox file_append{GetDlgItem(IDC_FILE_APPEND)};
-        file_append.SetCheck(file_append_ ? BST_CHECKED : BST_UNCHECKED);
-
-        max_lines_ = default_max_lines;
-        CEdit max_lines{GetDlgItem(IDC_MAX_LINES)};
-        max_lines.SetWindowText(L"");
-
-        update_preview();
-    }
-
-
-    // WTL message map
-    BEGIN_MSG_MAP_EX(Preferences)
+    BEGIN_MSG_MAP(TabNowPlaying)
         MSG_WM_INITDIALOG(OnInitDialog)
         MSG_WM_DESTROY(OnDestroyDialog)
         COMMAND_HANDLER_EX(IDC_PATH, EN_CHANGE, OnPathChange)
@@ -149,25 +100,28 @@ public:
         COMMAND_HANDLER_EX(IDC_MAX_LINES, EN_CHANGE, OnMaxLinesChange)
     END_MSG_MAP()
 
+    // Getters.
+    const pfc::string8& Path() const { return path_; }
+    const pfc::string8& Format() const { return format_; }
+    t_uint FileEncoding() const { return file_encoding_; }
+    bool WithBom() const { return with_bom_; }
+    bool FileAppned() const { return file_append_; }
+    t_uint MaxLines() const { return max_lines_; }
+
+    // Resets everything to default and updates the view.
+    void Reset();
+
 private:
     const preferences_page_callback::ptr callback_;
 
-    // Dark mode hooks object, must be a member of dialog class.
-    fb2k::CDarkModeHooks dark_mode_;
-
     pfc::string8 path_;
-
     pfc::string8 format_;
+    t_uint file_encoding_;
+    bool with_bom_;
+    bool file_append_;
+    t_uint max_lines_;
 
     titleformat_object::ptr script_;
-
-    t_uint file_encoding_;
-
-    bool with_bom_;
-
-    bool file_append_;
-
-    t_uint max_lines_;
 
     // WTL handlers.
     BOOL OnInitDialog(CWindow, LPARAM);
@@ -180,38 +134,50 @@ private:
     void OnMaxLinesChange(UINT, int, CWindow);
 
     // Playback callback methods.
-    void on_playback_starting(play_control::t_track_command p_command, bool p_paused) {}
-    void on_playback_new_track(metadb_handle_ptr p_track) { update_preview(); }
-    void on_playback_stop(play_control::t_stop_reason p_reason) { update_preview(); }
-    void on_playback_seek(double p_time) {}
-    void on_playback_pause(bool p_state) { update_preview(); }
-    void on_playback_edited(metadb_handle_ptr p_track) {}
-    void on_playback_dynamic_info(const file_info& p_info) {}
-    void on_playback_dynamic_info_track(const file_info& p_info) {}
-    void on_playback_time(double p_time) {}
-    void on_volume_change(float p_new_val) {}
+    void on_playback_starting(play_control::t_track_command p_command, bool p_paused) override {}
+    void on_playback_new_track(metadb_handle_ptr p_track) override { update_preview(); }
+    void on_playback_stop(play_control::t_stop_reason p_reason) override { update_preview(); }
+    void on_playback_seek(double p_time) override {}
+    void on_playback_pause(bool p_state) override { update_preview(); }
+    void on_playback_edited(metadb_handle_ptr p_track) override {}
+    void on_playback_dynamic_info(const file_info& p_info) override {}
+    void on_playback_dynamic_info_track(const file_info& p_info) override {}
+    void on_playback_time(double p_time) override {}
+    void on_volume_change(float p_new_val) override {}
 
-    void update_preview();
-
-    t_uint32 changed_flag()
-    {
-        if (format_ != playback_format || path_ != file_path || file_encoding_ != file_encoding ||
-            with_bom_ != with_bom || file_append_ != file_append || max_lines_ != max_lines)
-        {
-            return preferences_state::changed;
-        }
-        else
-        {
-            return 0;
-        }
-    }
+    void update_preview() const;
 };
 
-BOOL Preferences::OnInitDialog(CWindow, LPARAM)
+void TabNowPlaying::Reset()
 {
-    // Enable dark mode.
-    // One call does it all, applies all relevant hacks automatically.
-    dark_mode_.AddDialogWithControls(*this);
+    path_ = default_file_path;
+    uSetDlgItemText(*this, IDC_PATH, path_);
+
+    format_ = default_playback_format;
+    uSetDlgItemText(*this, IDC_FORMAT, format_);
+
+    file_encoding_ = default_file_encoding;
+    CComboBox file_encoding{GetDlgItem(IDC_FILE_ENCODING)};
+    file_encoding.SetCurSel(file_encoding_);
+
+    with_bom_ = default_with_bom;
+    CCheckBox with_bom{GetDlgItem(IDC_WITH_BOM)};
+    with_bom.SetCheck(with_bom_ ? BST_CHECKED : BST_UNCHECKED);
+
+    file_append_ = default_file_append;
+    CCheckBox file_append{GetDlgItem(IDC_FILE_APPEND)};
+    file_append.SetCheck(file_append_ ? BST_CHECKED : BST_UNCHECKED);
+
+    max_lines_ = default_max_lines;
+    CEdit max_lines{GetDlgItem(IDC_MAX_LINES)};
+    max_lines.SetWindowText(L"");
+
+    update_preview();
+}
+
+BOOL TabNowPlaying::OnInitDialog(CWindow, LPARAM)
+{
+    EnableThemeDialogTexture(m_hWnd, ETDT_ENABLETAB);
 
     uSetDlgItemText(*this, IDC_PATH, path_);
     uSetDlgItemText(*this, IDC_FORMAT, format_);
@@ -243,16 +209,15 @@ BOOL Preferences::OnInitDialog(CWindow, LPARAM)
 
     play_callback_manager::get()->register_callback(this, NowPlaying::playback_flags, true);
 
-    // Don't set keyboard focus to the dialog.
-    return FALSE;
+    return TRUE;
 }
 
-void Preferences::OnDestroyDialog()
+void TabNowPlaying::OnDestroyDialog()
 {
     play_callback_manager::get()->unregister_callback(this);
 }
 
-void Preferences::OnPathChange(UINT, int, CWindow)
+void TabNowPlaying::OnPathChange(UINT, int, CWindow)
 {
     // Get the text from the edit control.
     uGetDlgItemText(*this, IDC_PATH, path_);
@@ -261,7 +226,7 @@ void Preferences::OnPathChange(UINT, int, CWindow)
     callback_->on_state_changed();
 }
 
-void Preferences::OnFormatChange(UINT, int, CWindow)
+void TabNowPlaying::OnFormatChange(UINT, int, CWindow)
 {
     // Get the text from the edit control.
     uGetDlgItemText(*this, IDC_FORMAT, format_);
@@ -275,7 +240,7 @@ void Preferences::OnFormatChange(UINT, int, CWindow)
     callback_->on_state_changed();
 }
 
-void Preferences::OnBrowse(UINT, int, CWindow)
+void TabNowPlaying::OnBrowse(UINT, int, CWindow)
 {
     pfc::string8 new_path;
     if (uGetOpenFileName(*this, "All files|*.*", 0, nullptr, "Save file...", nullptr, new_path, TRUE))
@@ -285,16 +250,7 @@ void Preferences::OnBrowse(UINT, int, CWindow)
     }
 }
 
-void Preferences::OnFileEncodingChange(UINT, int, CWindow)
-{
-    CComboBox file_encoding{GetDlgItem(IDC_FILE_ENCODING)};
-    file_encoding_ = file_encoding.GetCurSel();
-    CCheckBox with_bom{GetDlgItem(IDC_WITH_BOM)};
-    with_bom_ = with_bom.GetCheck() == BST_CHECKED;
-    callback_->on_state_changed();
-}
-
-void Preferences::OnFileAppendChange(UINT, int, CWindow)
+void TabNowPlaying::OnFileAppendChange(UINT, int, CWindow)
 {
     CCheckBox file_append{GetDlgItem(IDC_FILE_APPEND)};
     file_append_ = file_append.GetCheck() == BST_CHECKED;
@@ -303,7 +259,7 @@ void Preferences::OnFileAppendChange(UINT, int, CWindow)
     callback_->on_state_changed();
 }
 
-void Preferences::OnMaxLinesChange(UINT, int, CWindow)
+void TabNowPlaying::OnMaxLinesChange(UINT, int, CWindow)
 {
     pfc::string8 lines;
     uGetDlgItemText(*this, IDC_MAX_LINES, lines);
@@ -318,13 +274,206 @@ void Preferences::OnMaxLinesChange(UINT, int, CWindow)
     callback_->on_state_changed();
 }
 
-void Preferences::update_preview()
+void TabNowPlaying::OnFileEncodingChange(UINT, int, CWindow)
+{
+    CComboBox file_encoding{GetDlgItem(IDC_FILE_ENCODING)};
+    file_encoding_ = file_encoding.GetCurSel();
+    CCheckBox with_bom{GetDlgItem(IDC_WITH_BOM)};
+    with_bom_ = with_bom.GetCheck() == BST_CHECKED;
+    callback_->on_state_changed();
+}
+
+void TabNowPlaying::update_preview() const
 {
     pfc::string8 preview;
     playback_control::get()->playback_format_title(nullptr, preview, script_, nullptr,
                                                    playback_control::display_level_all);
     uSetDlgItemText(*this, IDC_PREVIEW, preview);
 }
+
+
+class TabNextUp : public CDialogImpl<TabNextUp>, private play_callback_impl_base
+{
+public:
+    TabNextUp(preferences_page_callback::ptr callback) :
+        callback_(callback)
+    {
+    }
+
+    enum
+    {
+        IDD = IDD_NEXTUP
+    };
+
+    BEGIN_MSG_MAP(TabNextUp)
+        MSG_WM_INITDIALOG(OnInitDialog)
+        MSG_WM_DESTROY(OnDestroyDialog)
+    END_MSG_MAP()
+
+private:
+    const preferences_page_callback::ptr callback_;
+
+    // WTL handlers.
+    BOOL OnInitDialog(CWindow, LPARAM);
+    void OnDestroyDialog();
+
+    // Playback callback methods.
+    void on_playback_starting(play_control::t_track_command p_command, bool p_paused) override {}
+    void on_playback_new_track(metadb_handle_ptr p_track) override { update_preview(); }
+    void on_playback_stop(play_control::t_stop_reason p_reason) override { update_preview(); }
+    void on_playback_seek(double p_time) override {}
+    void on_playback_pause(bool p_state) override { update_preview(); }
+    void on_playback_edited(metadb_handle_ptr p_track) override {}
+    void on_playback_dynamic_info(const file_info& p_info) override {}
+    void on_playback_dynamic_info_track(const file_info& p_info) override {}
+    void on_playback_time(double p_time) override {}
+    void on_volume_change(float p_new_val) override {}
+
+    void update_preview() const;
+};
+
+BOOL TabNextUp::OnInitDialog(CWindow, LPARAM)
+{
+    EnableThemeDialogTexture(m_hWnd, ETDT_ENABLETAB);
+
+    play_callback_manager::get()->register_callback(this, NowPlaying::playback_flags, true);
+
+    return TRUE;
+}
+
+void TabNextUp::OnDestroyDialog()
+{
+    play_callback_manager::get()->unregister_callback(this);
+}
+
+void TabNextUp::update_preview() const
+{
+}
+
+
+class Preferences : public CDialogImpl<Preferences>, public preferences_page_instance
+{
+public:
+    // Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us.
+    Preferences(preferences_page_callback::ptr callback) :
+        tab_now_(callback), tab_next_(callback)
+    {
+    }
+
+    // Note that we don't bother doing anything regarding destruction of our class.
+    // The host ensures that our dialog is destroyed first, then the last reference to our preferences_page_instance object is released, causing our object to be deleted.
+
+
+    // Dialog resource ID.
+    enum
+    {
+        IDD = IDD_PREFERENCES
+    };
+
+
+    t_uint32 get_state() override
+    {
+        return preferences_state::resettable | preferences_state::dark_mode_supported | changed_flag();
+    }
+
+    void apply() override
+    {
+        // Apply changes.
+        file_path = tab_now_.Path();
+        playback_format = tab_now_.Format();
+        file_encoding = tab_now_.FileEncoding();
+        with_bom = tab_now_.WithBom();
+        file_append = tab_now_.FileAppned();
+        max_lines = tab_now_.MaxLines();
+
+        g_nowplaying2.get_static_instance().refresh_settings(true);
+    }
+
+    void reset() override
+    {
+        // Reset to defaults.
+        tab_now_.Reset();
+    }
+
+    // WTL message map
+    BEGIN_MSG_MAP_EX(Preferences)
+        MSG_WM_INITDIALOG(OnInitDialog)
+        NOTIFY_CODE_HANDLER(TCN_SELCHANGE, OnTabChanged)
+    END_MSG_MAP()
+
+private:
+    TabNowPlaying tab_now_;
+    TabNextUp tab_next_;
+
+    // Dark mode hooks object, must be a member of dialog class.
+    fb2k::CDarkModeHooks dark_mode_;
+
+    CTabCtrl tabs_;
+
+    // WTL handlers.
+    BOOL OnInitDialog(CWindow, LPARAM lParam);
+    LRESULT OnTabChanged(int, LPNMHDR, BOOL&);
+
+    t_uint32 changed_flag() const
+    {
+        return
+            tab_now_.Format() != playback_format || tab_now_.Path() != file_path || tab_now_.FileEncoding() != file_encoding ||
+            tab_now_.WithBom() != with_bom || tab_now_.FileAppned() != file_append || tab_now_.MaxLines() != max_lines
+        ? preferences_state::changed
+        : 0;
+    }
+};
+
+BOOL Preferences::OnInitDialog(CWindow, LPARAM lParam)
+{
+    // Enable dark mode.
+    // One call does it all, applies all relevant hacks automatically.
+    dark_mode_.AddDialogWithControls(*this);
+
+    tabs_.Attach(GetDlgItem(IDC_TAB));
+    tabs_.AddItem(L"Now Playing");
+    tabs_.AddItem(L"Next Up");
+    tabs_.SetCurSel(0);
+
+    tab_now_.Create(*this, lParam);
+    tab_now_.ShowWindow(SW_SHOW);
+
+    tab_next_.Create(*this, lParam);
+    tab_next_.ShowWindow(SW_HIDE);
+
+    CTabView view;
+    view.m_tab.Attach(tabs_);
+    const int tabHeight = view.CalcTabHeight();
+    CRect rc;
+    tabs_.GetWindowRect(&rc);
+    ScreenToClient(&rc);
+    rc.top += tabHeight;
+    rc.DeflateRect(5, 0);
+    rc.bottom -= 5;
+    tab_now_.MoveWindow(&rc);
+    tab_next_.MoveWindow(&rc);
+
+    // Don't set keyboard focus to the dialog.
+    return FALSE;
+}
+
+LRESULT Preferences::OnTabChanged(int, LPNMHDR, BOOL&)
+{
+    const int index = tabs_.GetCurSel();
+    switch (index)
+    {
+    case 0:
+        tab_now_.ShowWindow(SW_SHOW);
+        tab_next_.ShowWindow(SW_HIDE);
+        break;
+    case 1:
+        tab_now_.ShowWindow(SW_HIDE);
+        tab_next_.ShowWindow(SW_SHOW);
+        break;
+    }
+    return 0;   
+}
+
 
 // preferences_page_impl<> helper deals with instantiation of our dialog; inherits from preferences_page_v3.
 class preferences_page_nowplaying2impl : public preferences_page_impl<Preferences>

@@ -11,7 +11,7 @@ add_library(
 
 target_link_libraries(
     foo_nowplaying2
-    PRIVATE foobar2000 wtl Shlwapi.lib
+    PRIVATE foobar2000 wtl Shlwapi.lib Uxtheme.lib
 )
 
 source_group("Resource Files" foo_nowplaying2.rc)
