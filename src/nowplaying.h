@@ -27,11 +27,17 @@ private:
 
     void update(metadb_handle_ptr track = nullptr);
 
-    void write_file();
+    void write_file(const pfc::string8& payload, const std::wstring& file_name, t_uint id_encoding, bool with_bom, bool with_append, t_uint max_lines);
 
     pfc::string8 playback_string_;
-    std::wstring file_;
-    titleformat_object::ptr script_;
+
+    std::wstring file_now_;
+    t_uint file_encoding_now_;
+    bool with_bom_now_;
+    bool file_append_now_;
+    t_uint max_lines_now_;
+
+    titleformat_object::ptr script_now_;
     pfc::mutex file_lock_;
 };
 

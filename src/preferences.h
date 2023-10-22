@@ -20,14 +20,17 @@ struct encoding_info
 
 extern const std::vector<encoding_info> encodings;
 
-extern cfg_string playback_format;
+namespace now
+{
+    extern cfg_string playback_format;
 
-extern cfg_string file_path;
+    extern cfg_string file_path;
 
-extern cfg_uint file_encoding;
+    extern cfg_uint file_encoding;
 
-extern cfg_bool with_bom;
+    extern cfg_bool with_bom;
 
-extern cfg_bool file_append;
+    extern cfg_bool file_append;
 
-extern cfg_uint max_lines;
+    extern cfg_uint max_lines;
+} // namespace now

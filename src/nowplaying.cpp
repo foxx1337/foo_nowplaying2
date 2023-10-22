@@ -6,11 +6,16 @@
 
 void NowPlaying::refresh_settings(bool force_update)
 {
-    titleformat_compiler::get()->compile_safe_ex(script_, playback_format.get(), nullptr);
+    // TODO lock the settings
+    titleformat_compiler::get()->compile_safe_ex(script_now_, now::playback_format.get(), nullptr);
 
     // This is how one gets a wchar_t string.
-    const pfc::stringcvt::string_wide_from_utf8_t file(file_path.get());
-    file_ = file;
+    const pfc::stringcvt::string_wide_from_utf8_t file(now::file_path.get());
+    file_now_ = file;
+    file_encoding_now_ = static_cast<t_uint>(now::file_encoding.get_value());
+    with_bom_now_ = now::with_bom.get();
+    file_append_now_ = now::file_append.get();
+    max_lines_now_ = static_cast<t_uint>(now::max_lines.get());
 
     if (force_update)
     {
@@ -125,7 +130,7 @@ bool truncate_file(HANDLE file, t_uint lines, encoding encoding, bool with_bom)
     const std::optional<encoding_info> e{get_encoding(data)};
     const size_t start = e.has_value() ? e->bom.size() : 0;
     const size_t last_n =
-        get_last_lines_offset(data, start, lines, static_cast<enum class encoding>(file_encoding.get_value()));
+        get_last_lines_offset(data, start, lines, encoding);
 
     // Empty the whole file, BOM or not.
     SetFilePointer(file, 0, nullptr, FILE_BEGIN);
@@ -183,12 +188,12 @@ metadb_handle_ptr get_next_handle(metadb_handle_ptr track)
 
 void NowPlaying::update(metadb_handle_ptr track)
 {
-    if (playback_format.get().length() == 0 || file_path.get().length() == 0)
+    if (now::playback_format.get().length() == 0 || now::file_path.get().length() == 0)
     {
         return;
     }
 
-    playback_control::get()->playback_format_title(nullptr, playback_string_, script_, nullptr,
+    playback_control::get()->playback_format_title(nullptr, playback_string_, script_now_, nullptr,
                                                    playback_control::display_level_all);
 
     auto next = get_next_handle(track);
@@ -204,13 +209,15 @@ void NowPlaying::update(metadb_handle_ptr track)
         playlist_manager::get()->playback_order_get_name(playlist_manager::get()->playback_order_get_active());
     // "Default"
 
-    write_file();
+    // TODO lock the settings
+    write_file(playback_string_, file_now_, file_encoding_now_, with_bom_now_, file_append_now_, max_lines_now_);
 }
 
-void NowPlaying::write_file()
+void NowPlaying::write_file(const pfc::string8& payload, const std::wstring& file_name, t_uint id_encoding,
+                            bool with_bom, bool with_append, t_uint max_lines)
 {
     // Make sure no empty line is appended to the file on stop.
-    if (file_append && playback_string_.is_empty())
+    if (with_append && payload.is_empty())
     {
         return;
     }
@@ -220,51 +227,49 @@ void NowPlaying::write_file()
         const auto file_unlock = [](pfc::mutex* lock) { lock->leave(); };
         std::unique_ptr<pfc::mutex, decltype(file_unlock)> file_lock_scope(&file_lock_, file_unlock);
 
-        HANDLE h_file = CreateFile(file_.c_str(), GENERIC_WRITE | (max_lines > 0 ? GENERIC_READ : 0),
-                        FILE_SHARE_READ | FILE_SHARE_WRITE,
-                        nullptr,
-                        file_append ? OPEN_ALWAYS : CREATE_ALWAYS,
-                        FILE_ATTRIBUTE_NORMAL,
-                        nullptr);
+        HANDLE h_file = CreateFile(file_name.c_str(), GENERIC_WRITE | (max_lines > 0 ? GENERIC_READ : 0),
+                                   FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+                                   with_append ? OPEN_ALWAYS : CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
         if (h_file != INVALID_HANDLE_VALUE)
         {
             const std::unique_ptr<void, decltype(&CloseHandle)> file(h_file, &CloseHandle);
             if (max_lines > 0)
             {
-                if (!truncate_file(file.get(), static_cast<t_uint>(max_lines), static_cast<encoding>(file_encoding.get_value()), with_bom))
+                if (!truncate_file(file.get(), max_lines, static_cast<encoding>(id_encoding), with_bom))
                 {
-                    const pfc::stringcvt::string_utf8_from_wide_t file_name(file_.c_str());
-                    console::printf("nowplaying2 couldn't truncate \"%s\" to %d lines.", file_name.get_ptr(), max_lines.get_value());
+                    const pfc::stringcvt::string_utf8_from_wide_t file_name_utf(file_name.c_str());
+                    console::printf("nowplaying2 couldn't truncate \"%s\" to %d lines.", file_name_utf.get_ptr(),
+                                    max_lines);
                     return;
                 }
             }
             bool need_bom = with_bom;
-            if (file_append)
+            if (with_append)
             {
                 LARGE_INTEGER pos{0};
                 pos.LowPart = SetFilePointer(file.get(), 0, &pos.HighPart, FILE_END);
                 if (pos.LowPart == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR)
                 {
-                    const pfc::stringcvt::string_utf8_from_wide_t file_name(file_.c_str());
-                    console::printf("nowplaying2 failed to seek into \"%s\" for writing.", file_name.get_ptr());
+                    const pfc::stringcvt::string_utf8_from_wide_t file_name_utf(file_name.c_str());
+                    console::printf("nowplaying2 failed to seek into \"%s\" for writing.", file_name_utf.get_ptr());
                     return;
                 }
                 need_bom = need_bom && pos.QuadPart == 0;
             }
-            const std::vector<unsigned char> message =
-                to_encoding(playback_string_ + (file_append ? "\n" : ""),
-                            static_cast<encoding>(file_encoding.get_value()), need_bom);
+            const std::vector<unsigned char> message = to_encoding(
+                payload + (with_append ? "\n" : ""), static_cast<encoding>(id_encoding), need_bom);
 
             if (const size_t written = write_all(file.get(), message); written != message.size())
             {
-                const pfc::stringcvt::string_utf8_from_wide_t file_name(file_.c_str());
-                console::printf("nowplaying2 only managed to write %lld bytes into \"%s\".", written, file_name.get_ptr());
+                const pfc::stringcvt::string_utf8_from_wide_t file_name_utf(file_name.c_str());
+                console::printf("nowplaying2 only managed to write %lld bytes into \"%s\".", written,
+                                file_name_utf.get_ptr());
             }
         }
         else
         {
-            const pfc::stringcvt::string_utf8_from_wide_t file_name(file_.c_str());
-            console::printf("nowplaying2 failed to open \"%s\" for writing.", file_name.get_ptr());
+            const pfc::stringcvt::string_utf8_from_wide_t file_name_utf(file_name.c_str());
+            console::printf("nowplaying2 failed to open \"%s\" for writing.", file_name_utf.get_ptr());
         }
     }
 }

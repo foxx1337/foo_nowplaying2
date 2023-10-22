@@ -11,75 +11,75 @@
 #include "resource.h"
 
 
-// {CA730BF5-9B42-403D-BB57-27C430D9086E}
-static constexpr GUID guid_playback_format
-{ 0xca730bf5, 0x9b42, 0x403d, { 0xbb, 0x57, 0x27, 0xc4, 0x30, 0xd9, 0x8, 0x6e } };
-
-static constexpr char default_playback_format[]
-{ "%artist% - %title%" };
-
-cfg_string playback_format(guid_playback_format, default_playback_format);
+const std::vector<encoding_info> encodings{encoding_info{encoding::UTF8, L"UTF-8", {0xef, 0xbb, 0xbf}},
+                                           encoding_info{encoding::UTF16LE, L"UTF-16 LE", {0xff, 0xfe}}};
 
 
-// {E8EB0BA5-877E-4F43-A99A-C23F145578F2}
-static constexpr GUID guid_file_path
-{ 0xe8eb0ba5, 0x877e, 0x4f43, { 0xa9, 0x9a, 0xc2, 0x3f, 0x14, 0x55, 0x78, 0xf2 } };
-
-static constexpr char default_file_path[]
-{""};
-
-cfg_string file_path(guid_file_path, default_file_path);
-
-
-// {75B61323-4ABB-4692-9483-800B00A30E6B}
-static constexpr GUID guid_file_encoding
-{ 0x75b61323, 0x4abb, 0x4692, { 0x94, 0x83, 0x80, 0xb, 0x0, 0xa3, 0xe, 0x6b } };
-
-const std::vector<encoding_info> encodings
+namespace now
 {
-    encoding_info{encoding::UTF8, L"UTF-8", {0xef, 0xbb, 0xbf}},
-    encoding_info{encoding::UTF16LE, L"UTF-16 LE", {0xff, 0xfe}}
-};
+    // {CA730BF5-9B42-403D-BB57-27C430D9086E}
+    static constexpr GUID guid_playback_format
+    { 0xca730bf5, 0x9b42, 0x403d, { 0xbb, 0x57, 0x27, 0xc4, 0x30, 0xd9, 0x8, 0x6e } };
 
-static constexpr t_uint32 default_file_encoding = static_cast<t_uint32>(encoding::UTF8);
+    static constexpr char default_playback_format[]
+    { "%artist% - %title%" };
 
-cfg_uint file_encoding(guid_file_encoding, default_file_encoding);
-
-
-// {25E80CCB-B77E-428C-AC0C-89DC08531C9B}
-static constexpr GUID guid_with_bom
-{ 0x25e80ccb, 0xb77e, 0x428c, { 0xac, 0xc, 0x89, 0xdc, 0x8, 0x53, 0x1c, 0x9b } };
-
-static constexpr bool default_with_bom = false;
-
-cfg_bool with_bom(guid_with_bom, default_with_bom);
+    cfg_string playback_format(guid_playback_format, default_playback_format);
 
 
-// {22F1D723-9487-4791-851B-1D2C74E0F4A0}
-static const GUID guid_file_append
-{ 0x22f1d723, 0x9487, 0x4791, { 0x85, 0x1b, 0x1d, 0x2c, 0x74, 0xe0, 0xf4, 0xa0 } };
+    // {E8EB0BA5-877E-4F43-A99A-C23F145578F2}
+    static constexpr GUID guid_file_path{0xe8eb0ba5, 0x877e, 0x4f43, {0xa9, 0x9a, 0xc2, 0x3f, 0x14, 0x55, 0x78, 0xf2}};
 
-static constexpr bool default_file_append = false;
+    static constexpr char default_file_path[]{""};
 
-cfg_bool file_append(guid_file_append, default_file_append);
+    cfg_string file_path(guid_file_path, default_file_path);
 
 
-// {26D45612-B6EC-4B8D-BF27-251639114FA4}
-static constexpr GUID guid_max_lines
-{ 0x26d45612, 0xb6ec, 0x4b8d, { 0xbf, 0x27, 0x25, 0x16, 0x39, 0x11, 0x4f, 0xa4 } };
+    // {75B61323-4ABB-4692-9483-800B00A30E6B}
+    static constexpr GUID guid_file_encoding
+    { 0x75b61323, 0x4abb, 0x4692, { 0x94, 0x83, 0x80, 0xb, 0x0, 0xa3, 0xe, 0x6b } };
 
-static constexpr t_uint32 default_max_lines = 0;
+    static constexpr t_uint32 default_file_encoding = static_cast<t_uint32>(encoding::UTF8);
 
-cfg_uint max_lines(guid_max_lines, default_max_lines);
+    cfg_uint file_encoding(guid_file_encoding, default_file_encoding);
+
+
+    // {25E80CCB-B77E-428C-AC0C-89DC08531C9B}
+    static constexpr GUID guid_with_bom
+    { 0x25e80ccb, 0xb77e, 0x428c, { 0xac, 0xc, 0x89, 0xdc, 0x8, 0x53, 0x1c, 0x9b } };
+
+    static constexpr bool default_with_bom = false;
+
+    cfg_bool with_bom(guid_with_bom, default_with_bom);
+
+
+    // {22F1D723-9487-4791-851B-1D2C74E0F4A0}
+    static const GUID guid_file_append
+    { 0x22f1d723, 0x9487, 0x4791, { 0x85, 0x1b, 0x1d, 0x2c, 0x74, 0xe0, 0xf4, 0xa0 } };
+
+    static constexpr bool default_file_append = false;
+
+    cfg_bool file_append(guid_file_append, default_file_append);
+
+
+    // {26D45612-B6EC-4B8D-BF27-251639114FA4}
+    static constexpr GUID guid_max_lines
+    { 0x26d45612, 0xb6ec, 0x4b8d, { 0xbf, 0x27, 0x25, 0x16, 0x39, 0x11, 0x4f, 0xa4 } };
+
+    static constexpr t_uint32 default_max_lines = 0;
+
+    cfg_uint max_lines(guid_max_lines, default_max_lines);
+} // namespace now
+
 
 
 class TabNowPlaying : public CDialogImpl<TabNowPlaying>, private play_callback_impl_base
 {
 public:
     TabNowPlaying(preferences_page_callback::ptr callback) :
-        callback_(callback), path_(file_path.get()), format_(playback_format.get()),
-        file_encoding_(static_cast<t_uint>(file_encoding)), with_bom_(with_bom),
-        file_append_(file_append), max_lines_(static_cast<t_uint>(max_lines))
+        callback_(callback), path_(now::file_path.get()), format_(now::playback_format.get()),
+        file_encoding_(static_cast<t_uint>(now::file_encoding)), with_bom_(now::with_bom),
+        file_append_(now::file_append), max_lines_(static_cast<t_uint>(now::max_lines))
     {
     }
 
@@ -150,25 +150,25 @@ private:
 
 void TabNowPlaying::Reset()
 {
-    path_ = default_file_path;
+    path_ = now::default_file_path;
     uSetDlgItemText(*this, IDC_PATH, path_);
 
-    format_ = default_playback_format;
+    format_ = now::default_playback_format;
     uSetDlgItemText(*this, IDC_FORMAT, format_);
 
-    file_encoding_ = default_file_encoding;
+    file_encoding_ = now::default_file_encoding;
     CComboBox file_encoding{GetDlgItem(IDC_FILE_ENCODING)};
     file_encoding.SetCurSel(file_encoding_);
 
-    with_bom_ = default_with_bom;
+    with_bom_ = now::default_with_bom;
     CCheckBox with_bom{GetDlgItem(IDC_WITH_BOM)};
     with_bom.SetCheck(with_bom_ ? BST_CHECKED : BST_UNCHECKED);
 
-    file_append_ = default_file_append;
+    file_append_ = now::default_file_append;
     CCheckBox file_append{GetDlgItem(IDC_FILE_APPEND)};
     file_append.SetCheck(file_append_ ? BST_CHECKED : BST_UNCHECKED);
 
-    max_lines_ = default_max_lines;
+    max_lines_ = now::default_max_lines;
     CEdit max_lines{GetDlgItem(IDC_MAX_LINES)};
     max_lines.SetWindowText(L"");
 
@@ -181,7 +181,7 @@ BOOL TabNowPlaying::OnInitDialog(CWindow, LPARAM)
 
     uSetDlgItemText(*this, IDC_PATH, path_);
     uSetDlgItemText(*this, IDC_FORMAT, format_);
-    titleformat_compiler::get()->compile_safe_ex(script_, playback_format.get(), nullptr);
+    titleformat_compiler::get()->compile_safe_ex(script_, now::playback_format.get(), nullptr);
 
     CComboBox file_encoding{GetDlgItem(IDC_FILE_ENCODING)};
     for (const auto& encoding : encodings)
@@ -379,12 +379,12 @@ public:
     void apply() override
     {
         // Apply changes.
-        file_path = tab_now_.Path();
-        playback_format = tab_now_.Format();
-        file_encoding = tab_now_.FileEncoding();
-        with_bom = tab_now_.WithBom();
-        file_append = tab_now_.FileAppned();
-        max_lines = tab_now_.MaxLines();
+        now::file_path = tab_now_.Path();
+        now::playback_format = tab_now_.Format();
+        now::file_encoding = tab_now_.FileEncoding();
+        now::with_bom = tab_now_.WithBom();
+        now::file_append = tab_now_.FileAppned();
+        now::max_lines = tab_now_.MaxLines();
 
         g_nowplaying2.get_static_instance().refresh_settings(true);
     }
@@ -417,8 +417,8 @@ private:
     t_uint32 changed_flag() const
     {
         return
-            tab_now_.Format() != playback_format || tab_now_.Path() != file_path || tab_now_.FileEncoding() != file_encoding ||
-            tab_now_.WithBom() != with_bom || tab_now_.FileAppned() != file_append || tab_now_.MaxLines() != max_lines
+            tab_now_.Format() != now::playback_format || tab_now_.Path() != now::file_path || tab_now_.FileEncoding() != now::file_encoding ||
+            tab_now_.WithBom() != now::with_bom || tab_now_.FileAppned() != now::file_append || tab_now_.MaxLines() != now::max_lines
         ? preferences_state::changed
         : 0;
     }
