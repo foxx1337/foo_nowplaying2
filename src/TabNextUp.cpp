@@ -26,6 +26,9 @@ BOOL TabNextUp::OnInitDialog(CWindow, LPARAM)
     dark_mode_.AddDialogWithControls(*this);
 
     uSetDlgItemText(*this, IDC_FORMAT, format_);
+    CEdit format{GetDlgItem(IDC_FORMAT)};
+    format.SetReadOnly(same_as_now_);
+
     titleformat_compiler::get()->compile_safe_ex(script_, format_, nullptr);
 
     CCheckBox same_as_now{GetDlgItem(IDC_USE_NOWPLAYING)};
@@ -61,6 +64,15 @@ void TabNextUp::OnSameAsNow(UINT, int, CWindow)
 {
     CCheckBox same_as_now{GetDlgItem(IDC_USE_NOWPLAYING)};
     same_as_now_ = same_as_now.GetCheck() == BST_CHECKED;
+
+    format_ = same_as_now_ ? now::playback_format.get() : next::playback_format.get();
+
+    uSetDlgItemText(*this, IDC_FORMAT, format_);
+    CEdit format{GetDlgItem(IDC_FORMAT)};
+    format.SetReadOnly(same_as_now_);
+
+    titleformat_compiler::get()->compile_safe_ex(script_, format_, nullptr);
+    
 
     // Notify the host that the preferences have changed.
     callback_->on_state_changed();

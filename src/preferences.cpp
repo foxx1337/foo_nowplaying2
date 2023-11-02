@@ -69,8 +69,11 @@ public:
         now::file_append = tab_now_.FileAppned();
         now::max_lines = tab_now_.MaxLines();
 
-        next::playback_format = tab_next_.Format();
         next::use_now = tab_next_.UseSameAsNow();
+        if (!next::use_now)
+        {
+            next::playback_format = tab_next_.Format();
+        }
 
         g_nowplaying2.get_static_instance().refresh_settings(true);
     }

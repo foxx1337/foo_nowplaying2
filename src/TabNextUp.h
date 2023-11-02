@@ -10,7 +10,10 @@
 class TabNextUp : public CDialogImpl<TabNextUp>, private play_callback_impl_base, private QueueCallback
 {
 public:
-    TabNextUp(preferences_page_callback::ptr callback) : callback_(callback), format_(next::playback_format.get()), same_as_now_(next::use_now) {}
+    TabNextUp(preferences_page_callback::ptr callback) : callback_(callback), same_as_now_(next::use_now)
+    {
+        format_ = same_as_now_ ? now::playback_format.get() : next::playback_format.get();
+    }
 
     enum
     {
