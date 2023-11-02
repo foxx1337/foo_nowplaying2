@@ -10,12 +10,18 @@ public:
 
     void refresh_settings(bool force_update = false);
 
+    metadb_handle_ptr get_current_track() const { return current_track_; }
+
 private:
     // Playback callback methods.
     unsigned get_flags() override { return playback_flags; }
 
     void on_playback_starting(play_control::t_track_command p_command, bool p_paused) override {}
-    void on_playback_new_track(metadb_handle_ptr p_track) override { update(p_track); }
+    void on_playback_new_track(metadb_handle_ptr p_track) override
+    {
+        current_track_ = p_track;
+        update(p_track);
+    }
     void on_playback_stop(play_control::t_stop_reason p_reason) override { update(); }
     void on_playback_seek(double p_time) override {}
     void on_playback_pause(bool p_state) override { update(); }
@@ -36,9 +42,12 @@ private:
     bool with_bom_now_;
     bool file_append_now_;
     t_uint max_lines_now_;
+    metadb_handle_ptr current_track_;
 
     titleformat_object::ptr script_now_;
     pfc::mutex file_lock_;
 };
+
+metadb_handle_ptr get_next_handle(metadb_handle_ptr track, bool stopped, bool exhausted);
 
 extern service_factory_single_t<NowPlaying> g_nowplaying2;

@@ -158,11 +158,25 @@ bool truncate_file(HANDLE file, t_uint lines, encoding encoding, bool with_bom)
 
 //! 
 //! @returns handle to the first song in the queue, or the song after the current one in the playlist if no queue.
-metadb_handle_ptr get_next_handle(metadb_handle_ptr track)
+metadb_handle_ptr get_next_handle(metadb_handle_ptr track, bool stopped, bool exhausted)
 {
+    if (exhausted)
+    {
+        t_size playlist = playlist_manager::get()->get_playing_playlist();
+        metadb_handle_ptr result;
+        bool have_song = strcmp(playlist_manager::get()->playback_order_get_name(
+                playlist_manager::get()->playback_order_get_active()),
+                "Default") == 0
+            && playlist_manager::get()->activeplaylist_get_item_handle(result, 0);
+        return have_song ? result : nullptr;
+    }
+    if (stopped)
+    {
+        return g_nowplaying2.get_static_instance().get_current_track();
+    }
     pfc::list_t<t_playback_queue_item> queue;
     playlist_manager::get()->queue_get_contents(queue);
-    if (queue.size() >= 1)
+    if (queue.size() >= 1 && queue.begin()->m_handle != track)
     {
         return queue.begin()->m_handle;
     }
@@ -173,7 +187,7 @@ metadb_handle_ptr get_next_handle(metadb_handle_ptr track)
         t_size playlist;
         t_size index;
         bool have_song = true;
-        if (!playlist_manager::get()->get_playing_item_location(&playlist, &index))
+        if (!playlist_manager::get()->get_playing_item_location(&playlist, &index) || queue.size() == 1 && queue.begin()->m_handle == track)
         {
             playlist = playlist_manager::get()->get_playing_playlist();
             have_song = playlist_manager::get()->playlist_find_item(playlist, track, index);
@@ -182,6 +196,7 @@ metadb_handle_ptr get_next_handle(metadb_handle_ptr track)
         {
             return playlist_manager::get()->playlist_get_item_handle(playlist, index + 1);
         }
+
     }
     return nullptr;
 }
@@ -196,7 +211,7 @@ void NowPlaying::update(metadb_handle_ptr track)
     playback_control::get()->playback_format_title(nullptr, playback_string_, script_now_, nullptr,
                                                    playback_control::display_level_all);
 
-    auto next = get_next_handle(track);
+    auto next = get_next_handle(track, false, false);
     if (next.is_valid())
     {
         pfc::string8 queue_string;
@@ -273,6 +288,7 @@ void NowPlaying::write_file(const pfc::string8& payload, const std::wstring& fil
         }
     }
 }
+
 
 class InitQuit : public initquit
 {

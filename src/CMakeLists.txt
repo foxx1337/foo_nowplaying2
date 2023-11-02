@@ -3,9 +3,15 @@ add_library(
     main.cpp
     preferences.cpp
     nowplaying.cpp
+    queue.cpp
+    TabNowPlaying.cpp
+    TabNextUp.cpp
     resource.h
     preferences.h
     nowplaying.h
+    queue.h
+    TabNowPlaying.h
+    TabNextUp.h
     foo_nowplaying2.rc
 )
 
