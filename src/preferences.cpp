@@ -81,8 +81,16 @@ public:
     void reset() override
     {
         // Reset to defaults.
-        tab_now_.Reset();
-        tab_next_.Reset();
+        const int index = tabs_.GetCurSel();
+        switch (index)
+        {
+        case 0:
+            tab_now_.Reset();
+            break;
+        case 1:
+            tab_next_.Reset();
+            break;
+        }
     }
 
     // WTL message map

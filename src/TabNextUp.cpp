@@ -15,6 +15,9 @@ void TabNextUp::Reset()
     same_as_now.SetCheck(same_as_now_ ? BST_CHECKED : BST_UNCHECKED);
 
     update_preview();
+
+    // Notify the host that the preferences have changed.
+    callback_->on_state_changed();
 }
 
 BOOL TabNextUp::OnInitDialog(CWindow, LPARAM)
@@ -72,7 +75,8 @@ void TabNextUp::OnSameAsNow(UINT, int, CWindow)
     format.SetReadOnly(same_as_now_);
 
     titleformat_compiler::get()->compile_safe_ex(script_, format_, nullptr);
-    
+
+    update_preview();
 
     // Notify the host that the preferences have changed.
     callback_->on_state_changed();

@@ -29,6 +29,9 @@ void TabNowPlaying::Reset()
     max_lines.SetWindowText(L"");
 
     update_preview();
+
+    // Notify the host that the preferences have changed.
+    callback_->on_state_changed();
 }
 
 BOOL TabNowPlaying::OnInitDialog(CWindow, LPARAM)
