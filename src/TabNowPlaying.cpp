@@ -46,6 +46,12 @@ BOOL TabNowPlaying::OnInitDialog(CWindow, LPARAM)
     uSetDlgItemText(*this, IDC_FORMAT, format_);
     titleformat_compiler::get()->compile_safe_ex(script_, format_, nullptr);
 
+    CEdit format{GetDlgItem(IDC_FORMAT)};
+    if (!font_.IsNull())
+    {
+        format.SetFont(font_);
+    }
+
     CComboBox file_encoding{GetDlgItem(IDC_FILE_ENCODING)};
     for (const auto& encoding : encodings)
     {

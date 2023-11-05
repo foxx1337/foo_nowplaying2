@@ -9,8 +9,8 @@
 class TabLog : public CDialogImpl<TabLog>, private play_callback_impl_base
 {
 public:
-    TabLog(preferences_page_callback::ptr callback) :
-        callback_(callback), path_(play_log::file_path.get()), same_as_now_(play_log::use_now),
+    TabLog(preferences_page_callback::ptr callback, const CFont& mono_font) :
+        callback_(callback), font_(mono_font), path_(play_log::file_path.get()), same_as_now_(play_log::use_now),
         file_encoding_(static_cast<t_uint>(play_log::file_encoding)), with_bom_(play_log::with_bom)
     {
         format_ = same_as_now_ ? now::playback_format.get() : play_log::playback_format.get();
@@ -47,6 +47,8 @@ private:
 
     // Dark mode hooks object, must be a member of dialog class.
     fb2k::CDarkModeHooks dark_mode_;
+
+    const CFont& font_;
 
     pfc::string8 path_;
     pfc::string8 format_;

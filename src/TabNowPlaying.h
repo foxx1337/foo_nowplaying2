@@ -9,8 +9,8 @@
 class TabNowPlaying : public CDialogImpl<TabNowPlaying>, private play_callback_impl_base
 {
 public:
-    TabNowPlaying(preferences_page_callback::ptr callback) :
-        callback_(callback), path_(now::file_path.get()), format_(now::playback_format.get()),
+    TabNowPlaying(preferences_page_callback::ptr callback, const CFont& mono_font) :
+        callback_(callback), font_(mono_font), path_(now::file_path.get()), format_(now::playback_format.get()),
         file_encoding_(static_cast<t_uint>(now::file_encoding)), with_bom_(now::with_bom),
         file_append_(now::file_append), max_lines_(static_cast<t_uint>(now::max_lines))
     {
@@ -49,6 +49,8 @@ private:
 
     // Dark mode hooks object, must be a member of dialog class.
     fb2k::CDarkModeHooks dark_mode_;
+
+    const CFont& font_;
 
     pfc::string8 path_;
     pfc::string8 format_;

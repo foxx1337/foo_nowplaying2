@@ -10,8 +10,8 @@
 class TabNextUp : public CDialogImpl<TabNextUp>, private play_callback_impl_base, private QueueCallback
 {
 public:
-    TabNextUp(preferences_page_callback::ptr callback) :
-        callback_(callback), path_(next::file_path.get()), same_as_now_(next::use_now),
+    TabNextUp(preferences_page_callback::ptr callback, const CFont& mono_font) :
+        callback_(callback), font_(mono_font), path_(next::file_path.get()), same_as_now_(next::use_now),
         file_encoding_(static_cast<t_uint>(next::file_encoding)), with_bom_(next::with_bom),
         file_append_(next::file_append), max_lines_(static_cast<t_uint>(next::max_lines))
     {
@@ -53,6 +53,8 @@ private:
 
     // Dark mode hooks object, must be a member of dialog class.
     fb2k::CDarkModeHooks dark_mode_;
+
+    const CFont& font_;
 
     pfc::string8 path_;
     pfc::string8 format_;

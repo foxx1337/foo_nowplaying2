@@ -51,6 +51,11 @@ BOOL TabNextUp::OnInitDialog(CWindow, LPARAM)
 
     titleformat_compiler::get()->compile_safe_ex(script_, format_, nullptr);
 
+    if (!font_.IsNull())
+    {
+        format.SetFont(font_);
+    }
+
     CCheckBox same_as_now{GetDlgItem(IDC_USE_NOWPLAYING)};
     same_as_now.SetCheck(same_as_now_ ? BST_CHECKED : BST_UNCHECKED);
 

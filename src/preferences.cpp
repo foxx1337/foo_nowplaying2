@@ -71,7 +71,7 @@ class Preferences : public CDialogImpl<Preferences>, public preferences_page_ins
 public:
     // Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us.
     Preferences(preferences_page_callback::ptr callback) :
-        tab_now_(callback), tab_next_(callback), tab_log_(callback)
+        tab_now_(callback, font_), tab_next_(callback, font_), tab_log_(callback, font_)
     {
     }
 
@@ -145,6 +145,7 @@ public:
     // WTL message map
     BEGIN_MSG_MAP_EX(Preferences)
         MSG_WM_INITDIALOG(OnInitDialog)
+        MSG_WM_DESTROY(OnDestroyDialog)
         NOTIFY_CODE_HANDLER(TCN_SELCHANGE, OnTabChanged)
     END_MSG_MAP()
 
@@ -152,6 +153,7 @@ private:
     TabNowPlaying tab_now_;
     TabNextUp tab_next_;
     TabLog tab_log_;
+    CFont font_;
 
     // Dark mode hooks object, must be a member of dialog class.
     fb2k::CDarkModeHooks dark_mode_;
@@ -160,6 +162,7 @@ private:
 
     // WTL handlers.
     BOOL OnInitDialog(CWindow, LPARAM lParam);
+    void OnDestroyDialog();
     LRESULT OnTabChanged(int, LPNMHDR, BOOL&);
 
     t_uint32 changed_flag() const
@@ -188,6 +191,9 @@ BOOL Preferences::OnInitDialog(CWindow, LPARAM lParam)
     tabs_.AddItem(L"Log");
     tabs_.SetCurSel(0);
 
+    font_.CreateFont(14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS,
+               CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Consolas");
+
     tab_now_.Create(*this, lParam);
     tab_now_.ShowWindow(SW_SHOW);
 
@@ -213,6 +219,15 @@ BOOL Preferences::OnInitDialog(CWindow, LPARAM lParam)
     // Don't set keyboard focus to the dialog.
     return FALSE;
 }
+
+void Preferences::OnDestroyDialog()
+{
+    if (!font_.IsNull())
+    {
+        font_.DeleteObject();
+    }
+}
+
 
 LRESULT Preferences::OnTabChanged(int, LPNMHDR, BOOL&)
 {
