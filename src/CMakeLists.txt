@@ -6,12 +6,14 @@ add_library(
     queue.cpp
     TabNowPlaying.cpp
     TabNextUp.cpp
+    TabLog.cpp
     resource.h
     preferences.h
     nowplaying.h
     queue.h
     TabNowPlaying.h
     TabNextUp.h
+    TabLog.h
     foo_nowplaying2.rc
 )
 

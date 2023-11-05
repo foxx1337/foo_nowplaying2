@@ -8,6 +8,7 @@
 
 #include "preferences.h"
 #include "NowPlaying.h"
+#include "TabLog.h"
 
 #include "TabNowPlaying.h"
 #include "TabNextUp.h"
@@ -55,7 +56,7 @@ class Preferences : public CDialogImpl<Preferences>, public preferences_page_ins
 public:
     // Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us.
     Preferences(preferences_page_callback::ptr callback) :
-        tab_now_(callback), tab_next_(callback)
+        tab_now_(callback), tab_next_(callback), tab_log_(callback)
     {
     }
 
@@ -111,6 +112,9 @@ public:
         case 1:
             tab_next_.Reset();
             break;
+        case 2:
+            tab_log_.Reset();
+            break;
         }
     }
 
@@ -123,6 +127,7 @@ public:
 private:
     TabNowPlaying tab_now_;
     TabNextUp tab_next_;
+    TabLog tab_log_;
 
     // Dark mode hooks object, must be a member of dialog class.
     fb2k::CDarkModeHooks dark_mode_;
@@ -155,6 +160,7 @@ BOOL Preferences::OnInitDialog(CWindow, LPARAM lParam)
     tabs_.Attach(GetDlgItem(IDC_TAB));
     tabs_.AddItem(L"Now Playing");
     tabs_.AddItem(L"Next Up");
+    tabs_.AddItem(L"Log");
     tabs_.SetCurSel(0);
 
     tab_now_.Create(*this, lParam);
@@ -162,6 +168,9 @@ BOOL Preferences::OnInitDialog(CWindow, LPARAM lParam)
 
     tab_next_.Create(*this, lParam);
     tab_next_.ShowWindow(SW_HIDE);
+
+    tab_log_.Create(*this, lParam);
+    tab_log_.ShowWindow(SW_HIDE);
 
     CTabView view;
     view.m_tab.Attach(tabs_);
@@ -174,6 +183,7 @@ BOOL Preferences::OnInitDialog(CWindow, LPARAM lParam)
     rc.bottom -= 5;
     tab_now_.MoveWindow(&rc);
     tab_next_.MoveWindow(&rc);
+    tab_log_.MoveWindow(&rc);
 
     // Don't set keyboard focus to the dialog.
     return FALSE;
@@ -187,10 +197,17 @@ LRESULT Preferences::OnTabChanged(int, LPNMHDR, BOOL&)
     case 0:
         tab_now_.ShowWindow(SW_SHOW);
         tab_next_.ShowWindow(SW_HIDE);
+        tab_log_.ShowWindow(SW_HIDE);
         break;
     case 1:
         tab_now_.ShowWindow(SW_HIDE);
         tab_next_.ShowWindow(SW_SHOW);
+        tab_log_.ShowWindow(SW_HIDE);
+        break;
+    case 2:
+        tab_now_.ShowWindow(SW_HIDE);
+        tab_next_.ShowWindow(SW_HIDE);
+        tab_log_.ShowWindow(SW_SHOW);
         break;
     }
     return 0;   

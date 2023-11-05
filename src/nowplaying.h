@@ -3,9 +3,13 @@
 #include <SDK/foobar2000.h>
 #include <string>
 
-class NowPlaying : public play_callback_static
+#include "queue.h"
+
+class NowPlaying : public play_callback_static, private QueueCallback
 {
 public:
+    void queue_register();
+    void queue_unregister();
     static constexpr unsigned playback_flags = flag_on_playback_new_track | flag_on_playback_pause | flag_on_playback_stop;
 
     void refresh_settings(bool force_update = false);
@@ -34,6 +38,8 @@ private:
     void on_playback_dynamic_info(const file_info& p_info) override {}
     void on_playback_dynamic_info_track(const file_info& p_info) override {}
     void on_volume_change(float p_new_val) override {}
+
+    void on_queue() override { update(); }
 
     void update(metadb_handle_ptr track = nullptr, bool stopped = false, bool exhausted = false, bool another = false);
 

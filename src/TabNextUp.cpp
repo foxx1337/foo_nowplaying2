@@ -87,7 +87,7 @@ BOOL TabNextUp::OnInitDialog(CWindow, LPARAM)
 void TabNextUp::OnDestroyDialog()
 {
     play_callback_manager::get()->unregister_callback(this);
-    g_queue.get_static_instance().unregister_callback();
+    g_queue.get_static_instance().unregister_callback(this);
 }
 
 void TabNextUp::OnPathChange(UINT, int, CWindow)

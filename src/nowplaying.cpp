@@ -4,6 +4,16 @@
 #include <vector>
 #include <optional>
 
+void NowPlaying::queue_register()
+{
+    g_queue.get_static_instance().register_callback(this);
+}
+
+void NowPlaying::queue_unregister()
+{
+    g_queue.get_static_instance().unregister_callback(this);
+}
+
 void NowPlaying::refresh_settings(bool force_update)
 {
     // TODO lock the settings
@@ -297,8 +307,15 @@ void NowPlaying::write_file(const pfc::string8& payload, const std::wstring& fil
 class InitQuit : public initquit
 {
 public:
-    void on_init() override { g_nowplaying2.get_static_instance().refresh_settings(); }
-    void on_quit() override {}
+    void on_init() override
+    {
+        g_nowplaying2.get_static_instance().refresh_settings();
+        g_nowplaying2.get_static_instance().queue_register();
+    }
+    void on_quit() override
+    {
+        g_nowplaying2.get_static_instance().queue_unregister();
+    }
 };
 
 service_factory_single_t<NowPlaying> g_nowplaying2;
