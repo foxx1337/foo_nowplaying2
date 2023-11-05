@@ -94,3 +94,33 @@ namespace next
 
     bool is_used();
 } // namespace next
+
+namespace play_log
+{
+    // {B9A1E24F-0385-4816-BEFB-9A1C77682FC3}
+    constexpr GUID guid_playback_format{0xb9a1e24f, 0x385, 0x4816, {0xbe, 0xfb, 0x9a, 0x1c, 0x77, 0x68, 0x2f, 0xc3}};
+    constexpr char default_playback_format[]{"%artist% - %title%"};
+    extern cfg_string playback_format;
+
+    // {43D9E0EF-EF4A-4BB4-968B-C38F9B501D11}
+    constexpr GUID guid_file_path{0x43d9e0ef, 0xef4a, 0x4bb4, {0x96, 0x8b, 0xc3, 0x8f, 0x9b, 0x50, 0x1d, 0x11}};
+    constexpr char default_file_path[]{""};
+    extern cfg_string file_path;
+
+    // {6955D815-6166-468A-9460-5E60E704FA04}
+    constexpr GUID guid_use_now{0x6955d815, 0x6166, 0x468a, {0x94, 0x60, 0x5e, 0x60, 0xe7, 0x4, 0xfa, 0x4}};
+    constexpr bool default_use_now{false};
+    extern cfg_bool use_now;
+
+    // {ABB8E2C1-74E6-410E-9949-9CAE05A281D5}
+    constexpr GUID guid_file_encoding{0xabb8e2c1, 0x74e6, 0x410e, {0x99, 0x49, 0x9c, 0xae, 0x5, 0xa2, 0x81, 0xd5}};
+    constexpr t_uint32 default_file_encoding{static_cast<t_uint32>(encoding::UTF8)};
+    extern cfg_uint file_encoding;
+
+    // {CF8BD801-89B9-48F5-8D74-435F5A14C528}
+    constexpr GUID guid_with_bom{0xcf8bd801, 0x89b9, 0x48f5, {0x8d, 0x74, 0x43, 0x5f, 0x5a, 0x14, 0xc5, 0x28}};
+    constexpr bool default_with_bom{false};
+    extern cfg_bool with_bom;
+
+    bool is_used();
+} // namespace play_log

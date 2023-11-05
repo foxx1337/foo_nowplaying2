@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <optional>
+#include <chrono>
+#include <format>
 
 void NowPlaying::queue_register()
 {
@@ -17,24 +19,40 @@ void NowPlaying::queue_unregister()
 void NowPlaying::refresh_settings(bool force_update)
 {
     // TODO lock the settings
-    titleformat_compiler::get()->compile_safe_ex(script_now_, now::playback_format.get(), nullptr);
+    if (now::is_used())
+    {
+        titleformat_compiler::get()->compile_safe_ex(script_now_, now::playback_format.get(), nullptr);
 
-    // This is how one gets a wchar_t string.
-    const pfc::stringcvt::string_wide_from_utf8_t file(now::file_path.get());
-    file_now_ = file;
-    file_encoding_now_ = static_cast<t_uint>(now::file_encoding.get_value());
-    with_bom_now_ = now::with_bom.get();
-    file_append_now_ = now::file_append.get();
-    max_lines_now_ = static_cast<t_uint>(now::max_lines.get());
+        // This is how one gets a wchar_t string.
+        const pfc::stringcvt::string_wide_from_utf8_t file(now::file_path.get());
+        file_now_ = file;
+        file_encoding_now_ = static_cast<t_uint>(now::file_encoding.get_value());
+        with_bom_now_ = now::with_bom.get();
+        file_append_now_ = now::file_append.get();
+        max_lines_now_ = static_cast<t_uint>(now::max_lines.get());
+    }
+    if (next::is_used())
+    {
+        titleformat_compiler::get()->compile_safe_ex(
+            script_next_, next::use_now.get() ? now::playback_format.get() : next::playback_format.get(), nullptr);
 
-    titleformat_compiler::get()->compile_safe_ex(script_next_, next::use_now.get() ? now::playback_format.get() : next::playback_format.get(), nullptr);
+        const pfc::stringcvt::string_wide_from_utf8_t file_next(next::file_path.get());
+        file_next_ = file_next;
+        file_encoding_next_ = static_cast<t_uint>(next::file_encoding.get_value());
+        with_bom_next_ = next::with_bom.get();
+        file_append_next_ = next::file_append.get();
+        max_lines_next_ = static_cast<t_uint>(next::max_lines.get());
+    }
+    if (play_log::is_used())
+    {
+        titleformat_compiler::get()->compile_safe_ex(
+            script_log_, play_log::use_now.get() ? now::playback_format.get() : play_log::playback_format.get(),nullptr);
 
-    const pfc::stringcvt::string_wide_from_utf8_t file_next(next::file_path.get());
-    file_next_ = file_next;
-    file_encoding_next_ = static_cast<t_uint>(next::file_encoding.get_value());
-    with_bom_next_ = next::with_bom.get();
-    file_append_next_ = next::file_append.get();
-    max_lines_next_ = static_cast<t_uint>(next::max_lines.get());
+        const pfc::stringcvt::string_wide_from_utf8_t file_log(play_log::file_path.get());
+        file_log_ = file_log;
+        file_encoding_log_ = static_cast<t_uint>(play_log::file_encoding.get_value());
+        with_bom_log_ = play_log::with_bom.get();
+    }
 
     if (force_update)
     {
@@ -239,6 +257,16 @@ void NowPlaying::update(metadb_handle_ptr track, bool stopped /* = false */, boo
             write_file(playback_string_next_, file_next_, file_encoding_next_, with_bom_next_, file_append_next_,
                        max_lines_next_);
         }
+    }
+    if (play_log::is_used() && track.is_valid())
+    {
+        track->format_title(nullptr, playback_string_log_, script_log_, nullptr);
+        if (!playback_string_log_.empty())
+        {
+            auto const time = std::chrono::current_zone()->to_local(std::chrono::system_clock::now());
+            playback_string_log_ = pfc::string8(std::format("{:%Y-%m-%d %X} ", time).c_str()) + playback_string_log_;
+        }
+        write_file(playback_string_log_, file_log_, file_encoding_log_, with_bom_log_, true, 0);
     }
 }
 

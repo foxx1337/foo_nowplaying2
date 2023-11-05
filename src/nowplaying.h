@@ -65,6 +65,14 @@ private:
 
     titleformat_object::ptr script_next_;
 
+    pfc::string8 playback_string_log_;
+
+    std::wstring file_log_;
+    t_uint file_encoding_log_;
+    bool with_bom_log_;
+
+    titleformat_object::ptr script_log_;
+
     metadb_handle_ptr current_track_;
 
     pfc::mutex file_lock_;
