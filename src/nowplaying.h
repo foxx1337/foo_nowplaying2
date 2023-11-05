@@ -22,7 +22,11 @@ private:
         current_track_ = p_track;
         update(p_track);
     }
-    void on_playback_stop(play_control::t_stop_reason p_reason) override { update(); }
+    void on_playback_stop(play_control::t_stop_reason p_reason) override
+    {
+        update(nullptr, p_reason == playback_control::stop_reason_user,
+               p_reason == playback_control::stop_reason_eof, p_reason == playback_control::stop_reason_starting_another);
+    }
     void on_playback_seek(double p_time) override {}
     void on_playback_pause(bool p_state) override { update(); }
     void on_playback_time(double p_time) override {}
@@ -31,7 +35,7 @@ private:
     void on_playback_dynamic_info_track(const file_info& p_info) override {}
     void on_volume_change(float p_new_val) override {}
 
-    void update(metadb_handle_ptr track = nullptr);
+    void update(metadb_handle_ptr track = nullptr, bool stopped = false, bool exhausted = false, bool another = false);
 
     void write_file(const pfc::string8& payload, const std::wstring& file_name, t_uint id_encoding, bool with_bom, bool with_append, t_uint max_lines);
 
@@ -42,9 +46,21 @@ private:
     bool with_bom_now_;
     bool file_append_now_;
     t_uint max_lines_now_;
-    metadb_handle_ptr current_track_;
 
     titleformat_object::ptr script_now_;
+
+    pfc::string8 playback_string_next_;
+
+    std::wstring file_next_;
+    t_uint file_encoding_next_;
+    bool with_bom_next_;
+    bool file_append_next_;
+    t_uint max_lines_next_;
+
+    titleformat_object::ptr script_next_;
+
+    metadb_handle_ptr current_track_;
+
     pfc::mutex file_lock_;
 };
 

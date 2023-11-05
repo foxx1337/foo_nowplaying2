@@ -38,7 +38,7 @@ public:
     const pfc::string8& Format() const { return format_; }
     t_uint FileEncoding() const { return file_encoding_; }
     bool WithBom() const { return with_bom_; }
-    bool FileAppned() const { return file_append_; }
+    bool FileAppend() const { return file_append_; }
     t_uint MaxLines() const { return max_lines_; }
 
     // Resets everything to default and updates the view.

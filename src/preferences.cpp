@@ -25,12 +25,28 @@ namespace now
     cfg_bool with_bom(guid_with_bom, default_with_bom);
     cfg_bool file_append(guid_file_append, default_file_append);
     cfg_uint max_lines(guid_max_lines, default_max_lines);
+
+    bool is_used()
+    {
+        return playback_format.get().length() != 0 && now::file_path.get().length() != 0;
+    }
 } // namespace now
 
 namespace next
 {
     cfg_string playback_format(guid_playback_format, default_playback_format);
+    cfg_string file_path(guid_file_path, default_file_path);
     cfg_bool use_now(guid_use_now, default_use_now);
+    cfg_uint file_encoding(guid_file_encoding, default_file_encoding);
+    cfg_bool with_bom(guid_with_bom, default_with_bom);
+    cfg_bool file_append(guid_file_append, default_file_append);
+    cfg_uint max_lines(guid_max_lines, default_max_lines);
+
+    bool is_used()
+    {
+        return (playback_format.get().length() != 0 || (use_now.get() && now::playback_format.get().length() != 0)) &&
+            file_path.get().length() != 0;
+    }
 } // namespace next
 
 
@@ -66,7 +82,7 @@ public:
         now::playback_format = tab_now_.Format();
         now::file_encoding = tab_now_.FileEncoding();
         now::with_bom = tab_now_.WithBom();
-        now::file_append = tab_now_.FileAppned();
+        now::file_append = tab_now_.FileAppend();
         now::max_lines = tab_now_.MaxLines();
 
         next::use_now = tab_next_.UseSameAsNow();
@@ -74,6 +90,11 @@ public:
         {
             next::playback_format = tab_next_.Format();
         }
+        next::file_path = tab_next_.Path();
+        next::file_encoding = tab_next_.FileEncoding();
+        next::with_bom = tab_next_.WithBom();
+        next::file_append = tab_next_.FileAppend();
+        next::max_lines = tab_next_.MaxLines();
 
         g_nowplaying2.get_static_instance().refresh_settings(true);
     }
@@ -116,8 +137,10 @@ private:
     {
         return
             tab_now_.Format() != now::playback_format || tab_now_.Path() != now::file_path || tab_now_.FileEncoding() != now::file_encoding ||
-            tab_now_.WithBom() != now::with_bom || tab_now_.FileAppned() != now::file_append || tab_now_.MaxLines() != now::max_lines ||
-            tab_next_.Format() != next::playback_format || tab_next_.UseSameAsNow() != next::use_now
+            tab_now_.WithBom() != now::with_bom || tab_now_.FileAppend() != now::file_append || tab_now_.MaxLines() != now::max_lines ||
+            tab_next_.Format() != next::playback_format || tab_next_.Path() != next::file_path || tab_next_.UseSameAsNow() != next::use_now ||
+            tab_next_.FileEncoding() != next::file_encoding || tab_next_.WithBom() != next::with_bom || tab_next_.FileAppend() != next::file_append ||
+            tab_next_.MaxLines() != next::max_lines
         ? preferences_state::changed
         : 0;
     }

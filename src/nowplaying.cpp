@@ -17,6 +17,15 @@ void NowPlaying::refresh_settings(bool force_update)
     file_append_now_ = now::file_append.get();
     max_lines_now_ = static_cast<t_uint>(now::max_lines.get());
 
+    titleformat_compiler::get()->compile_safe_ex(script_next_, next::use_now.get() ? now::playback_format.get() : next::playback_format.get(), nullptr);
+
+    const pfc::stringcvt::string_wide_from_utf8_t file_next(next::file_path.get());
+    file_next_ = file_next;
+    file_encoding_next_ = static_cast<t_uint>(next::file_encoding.get_value());
+    with_bom_next_ = next::with_bom.get();
+    file_append_next_ = next::file_append.get();
+    max_lines_next_ = static_cast<t_uint>(next::max_lines.get());
+
     if (force_update)
     {
         update();
@@ -201,31 +210,26 @@ metadb_handle_ptr get_next_handle(metadb_handle_ptr track, bool stopped, bool ex
     return nullptr;
 }
 
-void NowPlaying::update(metadb_handle_ptr track)
+void NowPlaying::update(metadb_handle_ptr track, bool stopped /* = false */, bool exhausted /* = false */, bool another /* = false */)
 {
-    if (now::playback_format.get().length() == 0 || now::file_path.get().length() == 0)
+    if (now::is_used())
     {
-        return;
+        playback_control::get()->playback_format_title(nullptr, playback_string_, script_now_, nullptr,
+                                                       playback_control::display_level_all);
+
+        // TODO lock the settings
+        write_file(playback_string_, file_now_, file_encoding_now_, with_bom_now_, file_append_now_, max_lines_now_);
     }
-
-    playback_control::get()->playback_format_title(nullptr, playback_string_, script_now_, nullptr,
-                                                   playback_control::display_level_all);
-
-    auto next = get_next_handle(track, false, false);
-    if (next.is_valid())
+    if (next::is_used() && !another)
     {
-        pfc::string8 queue_string;
-        titleformat_object::ptr new_script;
-        titleformat_compiler::get()->compile_safe(new_script, "%filename%");
-        bool formatted = next->format_title(nullptr, queue_string, new_script, nullptr);
+        const metadb_handle_ptr next_handle = get_next_handle(track, stopped, exhausted);
+        if (next_handle.is_valid())
+        {
+            next_handle->format_title(nullptr, playback_string_next_, script_next_, nullptr);
+            write_file(playback_string_next_, file_next_, file_encoding_next_, with_bom_next_, file_append_next_,
+                       max_lines_next_);
+        }
     }
-
-    const char* order =
-        playlist_manager::get()->playback_order_get_name(playlist_manager::get()->playback_order_get_active());
-    // "Default"
-
-    // TODO lock the settings
-    write_file(playback_string_, file_now_, file_encoding_now_, with_bom_now_, file_append_now_, max_lines_now_);
 }
 
 void NowPlaying::write_file(const pfc::string8& payload, const std::wstring& file_name, t_uint id_encoding,
