@@ -29,7 +29,7 @@ namespace now
 
     bool is_used()
     {
-        return playback_format.get().length() != 0 && now::file_path.get().length() != 0;
+        return playback_format.length() != 0 && now::file_path.length() != 0;
     }
 } // namespace now
 
@@ -45,8 +45,8 @@ namespace next
 
     bool is_used()
     {
-        return (playback_format.get().length() != 0 || (use_now.get() && now::playback_format.get().length() != 0)) &&
-            file_path.get().length() != 0;
+        return (playback_format.length() != 0 || (use_now && now::playback_format.length() != 0)) &&
+            file_path.length() != 0;
     }
 } // namespace next
 
@@ -60,8 +60,8 @@ namespace play_log
 
     bool is_used()
     {
-        return (playback_format.get().length() != 0 || (use_now.get() && now::playback_format.get().length() != 0)) &&
-            file_path.get().length() != 0;
+        return (playback_format.length() != 0 || (use_now && now::playback_format.length() != 0)) &&
+            file_path.length() != 0;
     }
 } // namespace play_log
 
@@ -191,7 +191,8 @@ BOOL Preferences::OnInitDialog(CWindow, LPARAM lParam)
     tabs_.AddItem(L"Log");
     tabs_.SetCurSel(0);
 
-    font_.CreateFont(14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS,
+    const CFontHandle defaultFont(GetFont());
+    font_.CreateFont(GetFontHeight(defaultFont), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS,
                CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Consolas");
 
     tab_now_.Create(*this, lParam);

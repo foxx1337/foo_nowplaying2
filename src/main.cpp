@@ -1,6 +1,6 @@
 #include <SDK/foobar2000.h>
 
-DECLARE_COMPONENT_VERSION("Now Playing 2", "3.0", "Now Playing by foxx1337");
+DECLARE_COMPONENT_VERSION("Now Playing 2", "3.1", "Now Playing by foxx1337");
 
 // This will prevent users from renaming your component around (important for proper troubleshooter behaviors) or
 // loading multiple instances of it.

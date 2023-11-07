@@ -21,37 +21,37 @@ void NowPlaying::refresh_settings(bool force_update)
     // TODO lock the settings
     if (now::is_used())
     {
-        titleformat_compiler::get()->compile_safe_ex(script_now_, now::playback_format.get(), nullptr);
+        titleformat_compiler::get()->compile_safe_ex(script_now_, now::playback_format, nullptr);
 
         // This is how one gets a wchar_t string.
-        const pfc::stringcvt::string_wide_from_utf8_t file(now::file_path.get());
+        const pfc::stringcvt::string_wide_from_utf8_t file(now::file_path);
         file_now_ = file;
-        file_encoding_now_ = static_cast<t_uint>(now::file_encoding.get_value());
-        with_bom_now_ = now::with_bom.get();
-        file_append_now_ = now::file_append.get();
-        max_lines_now_ = static_cast<t_uint>(now::max_lines.get());
+        file_encoding_now_ = now::file_encoding.get_value();
+        with_bom_now_ = now::with_bom;
+        file_append_now_ = now::file_append;
+        max_lines_now_ = static_cast<t_uint>(now::max_lines);
     }
     if (next::is_used())
     {
         titleformat_compiler::get()->compile_safe_ex(
-            script_next_, next::use_now.get() ? now::playback_format.get() : next::playback_format.get(), nullptr);
+            script_next_, next::use_now ? now::playback_format : next::playback_format, nullptr);
 
-        const pfc::stringcvt::string_wide_from_utf8_t file_next(next::file_path.get());
+        const pfc::stringcvt::string_wide_from_utf8_t file_next(next::file_path);
         file_next_ = file_next;
-        file_encoding_next_ = static_cast<t_uint>(next::file_encoding.get_value());
-        with_bom_next_ = next::with_bom.get();
-        file_append_next_ = next::file_append.get();
-        max_lines_next_ = static_cast<t_uint>(next::max_lines.get());
+        file_encoding_next_ = next::file_encoding.get_value();
+        with_bom_next_ = next::with_bom;
+        file_append_next_ = next::file_append;
+        max_lines_next_ = static_cast<t_uint>(next::max_lines);
     }
     if (play_log::is_used())
     {
         titleformat_compiler::get()->compile_safe_ex(
-            script_log_, play_log::use_now.get() ? now::playback_format.get() : play_log::playback_format.get(),nullptr);
+            script_log_, play_log::use_now ? now::playback_format : play_log::playback_format,nullptr);
 
-        const pfc::stringcvt::string_wide_from_utf8_t file_log(play_log::file_path.get());
+        const pfc::stringcvt::string_wide_from_utf8_t file_log(play_log::file_path);
         file_log_ = file_log;
-        file_encoding_log_ = static_cast<t_uint>(play_log::file_encoding.get_value());
-        with_bom_log_ = play_log::with_bom.get();
+        file_encoding_log_ = play_log::file_encoding.get_value();
+        with_bom_log_ = play_log::with_bom;
     }
 
     if (force_update)
