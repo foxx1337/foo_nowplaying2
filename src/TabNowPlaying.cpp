@@ -28,6 +28,22 @@ void TabNowPlaying::Reset()
     CEdit max_lines{GetDlgItem(IDC_MAX_LINES)};
     max_lines.SetWindowText(L"");
 
+    trigger_on_new_ = now::default_trigger_on_new;
+    CCheckBox on_new{GetDlgItem(IDC_ON_NEW)};
+    on_new.SetCheck(trigger_on_new_ ? BST_CHECKED : BST_UNCHECKED);
+
+    trigger_on_pause_ = now::default_trigger_on_pause;
+    CCheckBox on_pause{GetDlgItem(IDC_ON_PAUSE)};
+    on_pause.SetCheck(trigger_on_pause_ ? BST_CHECKED : BST_UNCHECKED);
+
+    trigger_on_stop_ = now::default_trigger_on_stop;
+    CCheckBox on_stop{GetDlgItem(IDC_ON_STOP)};
+    on_stop.SetCheck(trigger_on_stop_ ? BST_CHECKED : BST_UNCHECKED);
+
+    trigger_on_time_ = now::default_trigger_on_time;
+    CCheckBox on_time{GetDlgItem(IDC_ON_TIME)};
+    on_time.SetCheck(trigger_on_time_ ? BST_CHECKED : BST_UNCHECKED);
+
     update_preview();
 
     // Notify the host that the preferences have changed.
@@ -75,6 +91,18 @@ BOOL TabNowPlaying::OnInitDialog(CWindow, LPARAM)
     {
         max_lines.EnableWindow(FALSE);
     }
+
+    CCheckBox on_new{GetDlgItem(IDC_ON_NEW)};
+    on_new.SetCheck(trigger_on_new_ ? BST_CHECKED : BST_UNCHECKED);
+
+    CCheckBox on_pause{GetDlgItem(IDC_ON_PAUSE)};
+    on_pause.SetCheck(trigger_on_pause_ ? BST_CHECKED : BST_UNCHECKED);
+
+    CCheckBox on_stop{GetDlgItem(IDC_ON_STOP)};
+    on_stop.SetCheck(trigger_on_stop_ ? BST_CHECKED : BST_UNCHECKED);
+
+    CCheckBox on_time{GetDlgItem(IDC_ON_TIME)};
+    on_time.SetCheck(trigger_on_time_ ? BST_CHECKED : BST_UNCHECKED);
 
     play_callback_manager::get()->register_callback(this, NowPlaying::playback_flags, true);
 
@@ -150,6 +178,21 @@ void TabNowPlaying::OnFileEncodingChange(UINT, int, CWindow)
     file_encoding_ = file_encoding.GetCurSel();
     CCheckBox with_bom{GetDlgItem(IDC_WITH_BOM)};
     with_bom_ = with_bom.GetCheck() == BST_CHECKED;
+
+    // Notify the host that the preferences have changed.
+    callback_->on_state_changed();
+}
+
+void TabNowPlaying::OnTriggerChange(UINT, int, CWindow)
+{
+    CCheckBox on_new{GetDlgItem(IDC_ON_NEW)};
+    trigger_on_new_ = on_new.GetCheck() == BST_CHECKED;
+    CCheckBox on_pause{GetDlgItem(IDC_ON_PAUSE)};
+    trigger_on_pause_ = on_pause.GetCheck() == BST_CHECKED;
+    CCheckBox on_stop{GetDlgItem(IDC_ON_STOP)};
+    trigger_on_stop_ = on_stop.GetCheck() == BST_CHECKED;
+    CCheckBox on_time{GetDlgItem(IDC_ON_TIME)};
+    trigger_on_time_ = on_time.GetCheck() == BST_CHECKED;
 
     // Notify the host that the preferences have changed.
     callback_->on_state_changed();

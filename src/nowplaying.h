@@ -10,7 +10,7 @@ class NowPlaying : public play_callback_static, private QueueCallback
 public:
     void queue_register();
     void queue_unregister();
-    static constexpr unsigned playback_flags = flag_on_playback_new_track | flag_on_playback_pause | flag_on_playback_stop;
+    static constexpr unsigned playback_flags = flag_on_playback_new_track | flag_on_playback_pause | flag_on_playback_stop | flag_on_playback_time;
 
     void refresh_settings(bool force_update = false);
 
@@ -20,30 +20,42 @@ private:
     // Playback callback methods.
     unsigned get_flags() override { return playback_flags; }
 
+    enum class action
+    {
+        any,
+        new_track,
+        pause,
+        stop,
+        time,
+        queue
+    };
+
     void on_playback_starting(play_control::t_track_command p_command, bool p_paused) override {}
     void on_playback_new_track(metadb_handle_ptr p_track) override
     {
         current_track_ = p_track;
-        update(p_track);
+        update(action::new_track, p_track);
     }
     void on_playback_stop(play_control::t_stop_reason p_reason) override
     {
-        update(nullptr, p_reason == playback_control::stop_reason_user,
+        update(action::stop, nullptr, p_reason == playback_control::stop_reason_user,
                p_reason == playback_control::stop_reason_eof, p_reason == playback_control::stop_reason_starting_another);
     }
     void on_playback_seek(double p_time) override {}
-    void on_playback_pause(bool p_state) override { update(); }
-    void on_playback_time(double p_time) override {}
+    void on_playback_pause(bool p_state) override { update(action::pause); }
+    void on_playback_time(double p_time) override { update(action::time); }
     void on_playback_edited(metadb_handle_ptr p_track) override {}
     void on_playback_dynamic_info(const file_info& p_info) override {}
     void on_playback_dynamic_info_track(const file_info& p_info) override {}
     void on_volume_change(float p_new_val) override {}
 
-    void on_queue() override { update(); }
+    void on_queue() override { update(action::queue); }
 
-    void update(metadb_handle_ptr track = nullptr, bool stopped = false, bool exhausted = false, bool another = false);
+    void update(action action, metadb_handle_ptr track = nullptr, bool stopped = false, bool exhausted = false, bool another = false);
 
     void write_file(const pfc::string8& payload, const std::wstring& file_name, t_uint id_encoding, bool with_bom, bool with_append, t_uint max_lines);
+
+    static bool is_action_enabled(action action);
 
     pfc::string8 playback_string_;
 

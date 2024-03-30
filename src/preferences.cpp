@@ -26,6 +26,10 @@ namespace now
     cfg_bool with_bom(guid_with_bom, default_with_bom);
     cfg_bool file_append(guid_file_append, default_file_append);
     cfg_uint max_lines(guid_max_lines, default_max_lines);
+    cfg_bool trigger_on_new(guid_trigger_on_new, default_trigger_on_new);
+    cfg_bool trigger_on_pause(guid_trigger_on_pause, default_trigger_on_pause);
+    cfg_bool trigger_on_stop(guid_trigger_on_stop, default_trigger_on_stop);
+    cfg_bool trigger_on_time(guid_trigger_on_time, default_trigger_on_time);
 
     bool is_used()
     {
@@ -100,6 +104,10 @@ public:
         now::with_bom = tab_now_.WithBom();
         now::file_append = tab_now_.FileAppend();
         now::max_lines = tab_now_.MaxLines();
+        now::trigger_on_new = tab_now_.TriggerOnNew();
+        now::trigger_on_pause = tab_now_.TriggerOnPause();
+        now::trigger_on_stop = tab_now_.TriggerOnStop();
+        now::trigger_on_time = tab_now_.TriggerOnTime();
 
         next::use_now = tab_next_.UseSameAsNow();
         if (!next::use_now)
@@ -170,6 +178,7 @@ private:
         return
             tab_now_.Format() != now::playback_format || tab_now_.Path() != now::file_path || tab_now_.FileEncoding() != now::file_encoding ||
             tab_now_.WithBom() != now::with_bom || tab_now_.FileAppend() != now::file_append || tab_now_.MaxLines() != now::max_lines ||
+            tab_now_.TriggerOnNew() != now::trigger_on_new || tab_now_.TriggerOnPause() != now::trigger_on_pause || tab_now_.TriggerOnStop() != now::trigger_on_stop || tab_now_.TriggerOnTime() != now::trigger_on_time ||
             tab_next_.Format() != next::playback_format || tab_next_.Path() != next::file_path || tab_next_.UseSameAsNow() != next::use_now ||
             tab_next_.FileEncoding() != next::file_encoding || tab_next_.WithBom() != next::with_bom || tab_next_.FileAppend() != next::file_append ||
             tab_next_.MaxLines() != next::max_lines || tab_log_.Format() != play_log::playback_format || tab_log_.Path() != play_log::file_path ||

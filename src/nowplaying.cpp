@@ -56,7 +56,7 @@ void NowPlaying::refresh_settings(bool force_update)
 
     if (force_update)
     {
-        update();
+        update(action::any);
     }
 }
 
@@ -238,9 +238,9 @@ metadb_handle_ptr get_next_handle(metadb_handle_ptr track, bool stopped, bool ex
     return nullptr;
 }
 
-void NowPlaying::update(metadb_handle_ptr track, bool stopped /* = false */, bool exhausted /* = false */, bool another /* = false */)
+void NowPlaying::update(action action, metadb_handle_ptr track, bool stopped /* = false */, bool exhausted /* = false */, bool another /* = false */)
 {
-    if (now::is_used())
+    if (now::is_used() && is_action_enabled(action))
     {
         playback_control::get()->playback_format_title(nullptr, playback_string_, script_now_, nullptr,
                                                        playback_control::display_level_all);
@@ -328,6 +328,27 @@ void NowPlaying::write_file(const pfc::string8& payload, const std::wstring& fil
             const pfc::stringcvt::string_utf8_from_wide_t file_name_utf(file_name.c_str());
             console::printf("nowplaying2 failed to open \"%s\" for writing.", file_name_utf.get_ptr());
         }
+    }
+}
+
+bool NowPlaying::is_action_enabled(action action)
+{
+    switch (action)
+    {
+    case action::new_track:
+        return now::trigger_on_new;
+    case action::pause:
+        return now::trigger_on_pause;
+    case action::stop:
+        return now::trigger_on_stop;
+    case action::time:
+        return now::trigger_on_time;
+    case action::any:
+        return true;
+    case action::queue:
+        return false;
+    default:
+        return false;
     }
 }
 

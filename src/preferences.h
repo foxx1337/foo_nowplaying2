@@ -52,6 +52,26 @@ namespace now
     constexpr t_uint32 default_max_lines{0};
     extern cfg_uint max_lines;
 
+    // {0A489F4B-1CA3-4247-9810-777CA9AA92CF}
+    constexpr GUID guid_trigger_on_new{0xa489f4b, 0x1ca3, 0x4247, {0x98, 0x10, 0x77, 0x7c, 0xa9, 0xaa, 0x92, 0xcf}};
+    constexpr bool default_trigger_on_new{true};
+    extern cfg_bool trigger_on_new;
+
+    // {BFFE2DCF-6DFA-499D-93E7-36F449314686}
+    constexpr GUID guid_trigger_on_pause{0xbffe2dcf, 0x6dfa, 0x499d, {0x93, 0xe7, 0x36, 0xf4, 0x49, 0x31, 0x46, 0x86}};
+    constexpr bool default_trigger_on_pause{true};
+    extern cfg_bool trigger_on_pause;
+
+    // {FE8D8F0B-823A-48FC-B307-E479982DADF0}
+    constexpr GUID guid_trigger_on_stop{0xfe8d8f0b, 0x823a, 0x48fc, {0xb3, 0x7, 0xe4, 0x79, 0x98, 0x2d, 0xad, 0xf0}};
+    constexpr bool default_trigger_on_stop{true};
+    extern cfg_bool trigger_on_stop;
+
+    // {06273EDE-4741-43D1-A22C-D77075CB2AA3}
+    constexpr GUID guid_trigger_on_time{0x6273ede, 0x4741, 0x43d1, {0xa2, 0x2c, 0xd7, 0x70, 0x75, 0xcb, 0x2a, 0xa3}};
+    constexpr bool default_trigger_on_time{false};
+    extern cfg_bool trigger_on_time;
+
     bool is_used();
 } // namespace now
 

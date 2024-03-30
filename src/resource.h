@@ -21,6 +21,11 @@
 #define IDC_TAB2                        1017
 #define IDC_TAB                         1017
 #define IDC_USE_NOWPLAYING              1019
+#define IDC_ON_NEW                      1020
+#define IDC_ON_PAUSE                    1021
+#define IDC_ON_STOP                     1022
+#define IDC_ON_SECOND                   1023
+#define IDC_ON_TIME                     1023
 
 // Next default values for new objects
 // 

@@ -21,7 +21,8 @@ else()
     set(platform_DIR "${platform}/")
 endif()
 
-add_compile_options(/W3)
+add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3>)
+add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)
 
 find_package(foobar2000)
 find_package(wtl)
