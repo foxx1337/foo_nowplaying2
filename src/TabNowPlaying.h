@@ -112,7 +112,7 @@ private:
     }
     void on_playback_edited(metadb_handle_ptr p_track) override {}
     void on_playback_dynamic_info(const file_info& p_info) override {}
-    void on_playback_dynamic_info_track(const file_info& p_info) override {}
+    void on_playback_dynamic_info_track(const file_info& p_info) override { update_preview(); }
     void on_playback_time(double p_time) override
     {
         if (trigger_on_time_)
