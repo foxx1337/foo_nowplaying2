@@ -33,11 +33,13 @@ private:
     void on_playback_starting(play_control::t_track_command p_command, bool p_paused) override {}
     void on_playback_new_track(metadb_handle_ptr p_track) override
     {
+        playback_string_log_ = "";
         current_track_ = p_track;
         update(action::new_track, p_track);
     }
     void on_playback_stop(play_control::t_stop_reason p_reason) override
     {
+        playback_string_log_ = "";
         update(action::stop, nullptr, p_reason == playback_control::stop_reason_user,
                p_reason == playback_control::stop_reason_eof, p_reason == playback_control::stop_reason_starting_another);
     }
@@ -46,7 +48,11 @@ private:
     void on_playback_time(double p_time) override { update(action::time); }
     void on_playback_edited(metadb_handle_ptr p_track) override {}
     void on_playback_dynamic_info(const file_info& p_info) override {}
-    void on_playback_dynamic_info_track(const file_info& p_info) override { update(action::any); }
+    void on_playback_dynamic_info_track(const file_info& p_info) override
+    {
+        auto n = p_info.meta_get_count();
+        update(action::any);
+    }
     void on_volume_change(float p_new_val) override {}
 
     void on_queue() override { update(action::queue); }

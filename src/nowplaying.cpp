@@ -258,15 +258,33 @@ void NowPlaying::update(action action, metadb_handle_ptr track, bool stopped /* 
                        max_lines_next_);
         }
     }
-    if (play_log::is_used() && track.is_valid())
+    if (play_log::is_used() && (track.is_valid() || action == action::any))
     {
-        track->format_title(nullptr, playback_string_log_, script_log_, nullptr);
-        if (!playback_string_log_.empty())
+        pfc::string8 playback_string_log;
+        bool do_log = false;
+        if (track.is_valid())
+        {
+            track->format_title(nullptr, playback_string_log, script_log_, nullptr);
+        }
+        else
+        {
+            playback_control::get()->playback_format_title(nullptr, playback_string_log, script_log_, nullptr,
+                                                           playback_control::display_level_all);
+        }
+        if (playback_string_log != playback_string_log_)
+        {
+            playback_string_log_ = playback_string_log;
+            do_log = true;
+        }
+        if (!playback_string_log.empty())
         {
             auto const time = std::chrono::current_zone()->to_local(std::chrono::system_clock::now());
-            playback_string_log_ = pfc::string8(std::format("{:%Y-%m-%d %X} ", time).c_str()) + playback_string_log_;
+            playback_string_log = pfc::string8(std::format("{:%Y-%m-%d %X} ", time).c_str()) + playback_string_log;
+            if (do_log)
+            {
+                write_file(playback_string_log, file_log_, file_encoding_log_, with_bom_log_, true, 0);
+            }
         }
-        write_file(playback_string_log_, file_log_, file_encoding_log_, with_bom_log_, true, 0);
     }
 }
 
