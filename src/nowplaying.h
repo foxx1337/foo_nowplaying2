@@ -59,6 +59,8 @@ private:
 
     void update(action action, metadb_handle_ptr track = nullptr, bool stopped = false, bool exhausted = false, bool another = false);
 
+    void update_exit();
+
     void write_file(const pfc::string8& payload, const std::wstring& file_name, t_uint id_encoding, bool with_bom, bool with_append, t_uint max_lines);
 
     static bool is_action_enabled(action action);

@@ -30,10 +30,16 @@ namespace now
     cfg_bool trigger_on_pause(guid_trigger_on_pause, default_trigger_on_pause);
     cfg_bool trigger_on_stop(guid_trigger_on_stop, default_trigger_on_stop);
     cfg_bool trigger_on_time(guid_trigger_on_time, default_trigger_on_time);
+    cfg_string exit_message(guid_exit_message, default_exit_message);
 
     bool is_used()
     {
-        return playback_format.length() != 0 && now::file_path.length() != 0;
+        return
+            (
+                playback_format.length() != 0 ||
+                exit_message.length() != 0
+            ) &&
+            now::file_path.length() != 0;
     }
 } // namespace now
 
@@ -46,10 +52,16 @@ namespace next
     cfg_bool with_bom(guid_with_bom, default_with_bom);
     cfg_bool file_append(guid_file_append, default_file_append);
     cfg_uint max_lines(guid_max_lines, default_max_lines);
+    cfg_string exit_message(guid_exit_message, default_exit_message);
+    cfg_bool use_exit_now(guid_use_exit_now, default_use_exit_now);
 
     bool is_used()
     {
-        return (playback_format.length() != 0 || (use_now && now::playback_format.length() != 0)) &&
+        return
+            (
+                (playback_format.length() != 0 || (use_now && now::playback_format.length() != 0)) ||
+                (exit_message.length() != 0 || (use_exit_now && now::exit_message.length() != 0))
+            ) &&
             file_path.length() != 0;
     }
 } // namespace next
@@ -61,10 +73,16 @@ namespace play_log
     cfg_bool use_now(guid_use_now, default_use_now);
     cfg_uint file_encoding(guid_file_encoding, default_file_encoding);
     cfg_bool with_bom(guid_with_bom, default_with_bom);
+    cfg_string exit_message(guid_exit_message, default_exit_message);
+    cfg_bool use_exit_now(guid_use_exit_now, default_use_exit_now);
 
     bool is_used()
     {
-        return (playback_format.length() != 0 || (use_now && now::playback_format.length() != 0)) &&
+        return
+            (
+                (playback_format.length() != 0 || (use_now && now::playback_format.length() != 0)) ||
+                (exit_message.length() != 0 || (use_exit_now && now::exit_message.length() != 0))
+            ) &&
             file_path.length() != 0;
     }
 } // namespace play_log
@@ -75,7 +93,7 @@ class Preferences : public CDialogImpl<Preferences>, public preferences_page_ins
 public:
     // Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us.
     Preferences(preferences_page_callback::ptr callback) :
-        tab_now_(callback, font_), tab_next_(callback, font_), tab_log_(callback, font_)
+        tab_now_(callback, font_), tab_next_(callback, font_, tab_now_), tab_log_(callback, font_, tab_now_)
     {
     }
 
@@ -108,6 +126,7 @@ public:
         now::trigger_on_pause = tab_now_.TriggerOnPause();
         now::trigger_on_stop = tab_now_.TriggerOnStop();
         now::trigger_on_time = tab_now_.TriggerOnTime();
+        now::exit_message = tab_now_.ExitMessage();
 
         next::use_now = tab_next_.UseSameAsNow();
         if (!next::use_now)
@@ -119,6 +138,8 @@ public:
         next::with_bom = tab_next_.WithBom();
         next::file_append = tab_next_.FileAppend();
         next::max_lines = tab_next_.MaxLines();
+        next::exit_message = tab_next_.ExitMessage();
+        next::use_exit_now = tab_next_.UseExitNow();
 
         play_log::use_now = tab_log_.UseSameAsNow();
         if (!play_log::use_now)
@@ -128,6 +149,8 @@ public:
         play_log::file_path = tab_log_.Path();
         play_log::file_encoding = tab_log_.FileEncoding();
         play_log::with_bom = tab_log_.WithBom();
+        play_log::exit_message = tab_log_.ExitMessage();
+        play_log::use_exit_now = tab_log_.UseExitNow();
 
         g_nowplaying2.get_static_instance().refresh_settings(true);
     }
@@ -178,11 +201,14 @@ private:
         return
             tab_now_.Format() != now::playback_format || tab_now_.Path() != now::file_path || tab_now_.FileEncoding() != now::file_encoding ||
             tab_now_.WithBom() != now::with_bom || tab_now_.FileAppend() != now::file_append || tab_now_.MaxLines() != now::max_lines ||
-            tab_now_.TriggerOnNew() != now::trigger_on_new || tab_now_.TriggerOnPause() != now::trigger_on_pause || tab_now_.TriggerOnStop() != now::trigger_on_stop || tab_now_.TriggerOnTime() != now::trigger_on_time ||
+            tab_now_.TriggerOnNew() != now::trigger_on_new || tab_now_.TriggerOnPause() != now::trigger_on_pause|| tab_now_.TriggerOnStop() != now::trigger_on_stop ||
+            tab_now_.TriggerOnTime() != now::trigger_on_time || tab_now_.ExitMessage() != now::exit_message ||
             tab_next_.Format() != next::playback_format || tab_next_.Path() != next::file_path || tab_next_.UseSameAsNow() != next::use_now ||
             tab_next_.FileEncoding() != next::file_encoding || tab_next_.WithBom() != next::with_bom || tab_next_.FileAppend() != next::file_append ||
-            tab_next_.MaxLines() != next::max_lines || tab_log_.Format() != play_log::playback_format || tab_log_.Path() != play_log::file_path ||
-            tab_log_.UseSameAsNow() != play_log::use_now || tab_log_.FileEncoding() != play_log::file_encoding || tab_log_.WithBom() != play_log::with_bom
+            tab_next_.MaxLines() != next::max_lines || tab_next_.ExitMessage() != next::exit_message || tab_next_.UseExitNow() != next::use_exit_now ||
+            tab_log_.Format() != play_log::playback_format || tab_log_.Path() != play_log::file_path ||
+            tab_log_.UseSameAsNow() != play_log::use_now || tab_log_.FileEncoding() != play_log::file_encoding || tab_log_.WithBom() != play_log::with_bom ||
+            tab_log_.ExitMessage() != play_log::exit_message || tab_log_.UseExitNow() != play_log::use_exit_now
         ? preferences_state::changed
         : 0;
     }
@@ -273,8 +299,8 @@ public:
     // {EB2F1D5B-B5A2-4D64-9CC3-C7CB82B82A7F}
     GUID get_guid() override
     {
-        static constexpr GUID guid =
-        { 0xeb2f1d5b, 0xb5a2, 0x4d64, { 0x9c, 0xc3, 0xc7, 0xcb, 0x82, 0xb8, 0x2a, 0x7f } };
+        static constexpr GUID guid
+        {0xeb2f1d5b, 0xb5a2, 0x4d64, { 0x9c, 0xc3, 0xc7, 0xcb, 0x82, 0xb8, 0x2a, 0x7f}};
 
         return guid;
     }

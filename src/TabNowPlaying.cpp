@@ -44,6 +44,9 @@ void TabNowPlaying::Reset()
     CCheckBox on_time{GetDlgItem(IDC_ON_TIME)};
     on_time.SetCheck(trigger_on_time_ ? BST_CHECKED : BST_UNCHECKED);
 
+    exit_message_ = now::default_exit_message;
+    uSetDlgItemText(*this, IDC_EXIT_MESSAGE, exit_message_);
+
     update_preview();
 
     // Notify the host that the preferences have changed.
@@ -103,6 +106,8 @@ BOOL TabNowPlaying::OnInitDialog(CWindow, LPARAM)
 
     CCheckBox on_time{GetDlgItem(IDC_ON_TIME)};
     on_time.SetCheck(trigger_on_time_ ? BST_CHECKED : BST_UNCHECKED);
+
+    uSetDlgItemText(*this, IDC_EXIT_MESSAGE, exit_message_);
 
     play_callback_manager::get()->register_callback(this, NowPlaying::playback_flags, true);
 
@@ -193,6 +198,15 @@ void TabNowPlaying::OnTriggerChange(UINT, int, CWindow)
     trigger_on_stop_ = on_stop.GetCheck() == BST_CHECKED;
     CCheckBox on_time{GetDlgItem(IDC_ON_TIME)};
     trigger_on_time_ = on_time.GetCheck() == BST_CHECKED;
+
+    // Notify the host that the preferences have changed.
+    callback_->on_state_changed();
+}
+
+void TabNowPlaying::OnExitMessageChange(UINT, int, CWindow)
+{
+    // Get the text from the edit control.
+    uGetDlgItemText(*this, IDC_EXIT_MESSAGE, exit_message_);
 
     // Notify the host that the preferences have changed.
     callback_->on_state_changed();

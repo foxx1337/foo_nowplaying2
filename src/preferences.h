@@ -72,6 +72,11 @@ namespace now
     constexpr bool default_trigger_on_time{false};
     extern cfg_bool trigger_on_time;
 
+    // {8265504D-79DB-4DBC-AD78-D0AB5F4704B8}
+    constexpr GUID guid_exit_message{0x8265504d, 0x79db, 0x4dbc, {0xad, 0x78, 0xd0, 0xab, 0x5f, 0x47, 0x4, 0xb8}};
+    constexpr char default_exit_message[]{""};
+    extern cfg_string exit_message;
+
     bool is_used();
 } // namespace now
 
@@ -112,6 +117,16 @@ namespace next
     constexpr t_uint32 default_max_lines{0};
     extern cfg_uint max_lines;
 
+    // {DD7895AD-B501-40D0-82D9-8018410B3BDE}
+    constexpr GUID guid_exit_message{0xdd7895ad, 0xb501, 0x40d0, {0x82, 0xd9, 0x80, 0x18, 0x41, 0xb, 0x3b, 0xde}};
+    constexpr char default_exit_message[]{""};
+    extern cfg_string exit_message;
+
+    // {3987FE77-8F3F-43CB-B4C5-3FF957D649C2}
+    constexpr GUID guid_use_exit_now{0x3987fe77, 0x8f3f, 0x43cb, {0xb4, 0xc5, 0x3f, 0xf9, 0x57, 0xd6, 0x49, 0xc2}};
+    constexpr bool default_use_exit_now{false};
+    extern cfg_bool use_exit_now;
+
     bool is_used();
 } // namespace next
 
@@ -141,6 +156,16 @@ namespace play_log
     constexpr GUID guid_with_bom{0xcf8bd801, 0x89b9, 0x48f5, {0x8d, 0x74, 0x43, 0x5f, 0x5a, 0x14, 0xc5, 0x28}};
     constexpr bool default_with_bom{false};
     extern cfg_bool with_bom;
+
+    // {B7605109-DFF3-46EC-96E9-8C62D471186D}
+    constexpr GUID guid_exit_message{0xb7605109, 0xdff3, 0x46ec, {0x96, 0xe9, 0x8c, 0x62, 0xd4, 0x71, 0x18, 0x6d}};
+    constexpr char default_exit_message[]{""};
+    extern cfg_string exit_message;
+
+    // {82EDB5A5-99FA-4CCE-9DC2-9E6D566A2F70}
+    constexpr GUID guid_use_exit_now{0x82edb5a5, 0x99fa, 0x4cce, {0x9d, 0xc2, 0x9e, 0x6d, 0x56, 0x6a, 0x2f, 0x70}};
+    constexpr bool default_use_exit_now{false};
+    extern cfg_bool use_exit_now;
 
     bool is_used();
 } // namespace play_log

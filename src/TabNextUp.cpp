@@ -7,6 +7,9 @@
 
 void TabNextUp::Reset()
 {
+    path_ = next::default_file_path;
+    uSetDlgItemText(*this, IDC_PATH, path_);
+
     format_ = next::default_playback_format;
     uSetDlgItemText(*this, IDC_FORMAT, format_);
 
@@ -29,6 +32,13 @@ void TabNextUp::Reset()
     max_lines_ = next::default_max_lines;
     CEdit max_lines{GetDlgItem(IDC_MAX_LINES)};
     max_lines.SetWindowText(L"");
+
+    exit_message_ = next::default_exit_message;
+    uSetDlgItemText(*this, IDC_EXIT_MESSAGE, exit_message_);
+
+    use_exit_now_ = next::default_use_exit_now;
+    CCheckBox exit_now{GetDlgItem(IDC_USE_EXIT_NOW)};
+    exit_now.SetCheck(use_exit_now_ ? BST_CHECKED : BST_UNCHECKED);
 
     update_preview();
 
@@ -83,10 +93,32 @@ BOOL TabNextUp::OnInitDialog(CWindow, LPARAM)
         max_lines.EnableWindow(FALSE);
     }
 
+    uSetDlgItemText(*this, IDC_EXIT_MESSAGE, exit_message_);
+    CEdit exit_message{GetDlgItem(IDC_EXIT_MESSAGE)};
+    exit_message.SetReadOnly(use_exit_now_);
+
+    CCheckBox exit_now{GetDlgItem(IDC_USE_EXIT_NOW)};
+    exit_now.SetCheck(use_exit_now_ ? BST_CHECKED : BST_UNCHECKED);
+
     play_callback_manager::get()->register_callback(this, NowPlaying::playback_flags, true);
     g_queue.get_static_instance().register_callback(this);
 
     return TRUE;
+}
+
+void TabNextUp::OnShowWindow(BOOL, int)
+{
+    if (same_as_now_)
+    {
+        format_ = tab_now_.Format();
+        uSetDlgItemText(*this, IDC_FORMAT, format_);
+        update_preview();
+    }
+    if (use_exit_now_)
+    {
+        exit_message_ = tab_now_.ExitMessage();
+        uSetDlgItemText(*this, IDC_EXIT_MESSAGE, exit_message_);
+    }
 }
 
 void TabNextUp::OnDestroyDialog()
@@ -133,9 +165,18 @@ void TabNextUp::OnSameAsNow(UINT, int, CWindow)
     CCheckBox same_as_now{GetDlgItem(IDC_USE_NOWPLAYING)};
     same_as_now_ = same_as_now.GetCheck() == BST_CHECKED;
 
-    format_ = same_as_now_ ? now::playback_format.get() : next::playback_format.get();
+    if (same_as_now_)
+    {
+        original_format_ = format_;
+        format_ = tab_now_.Format();
+        uSetDlgItemText(*this, IDC_FORMAT, format_);
+    }
+    else
+    {
+        format_ = original_format_;
+        uSetDlgItemText(*this, IDC_FORMAT, format_);
+    }
 
-    uSetDlgItemText(*this, IDC_FORMAT, format_);
     CEdit format{GetDlgItem(IDC_FORMAT)};
     format.SetReadOnly(same_as_now_);
 
@@ -181,6 +222,39 @@ void TabNextUp::OnMaxLinesChange(UINT, int, CWindow)
     {
         max_lines_ = 0;
     }
+
+    // Notify the host that the preferences have changed.
+    callback_->on_state_changed();
+}
+
+void TabNextUp::OnExitMessageChange(UINT, int, CWindow)
+{
+    // Get the text from the edit control.
+    uGetDlgItemText(*this, IDC_EXIT_MESSAGE, exit_message_);
+
+    // Notify the host that the preferences have changed.
+    callback_->on_state_changed();
+}
+
+void TabNextUp::OnUseExitNow(UINT, int, CWindow)
+{
+    CCheckBox exit_now{GetDlgItem(IDC_USE_EXIT_NOW)};
+    use_exit_now_ = exit_now.GetCheck() == BST_CHECKED;
+
+    if (use_exit_now_)
+    {
+        original_exit_message_ = exit_message_;
+        exit_message_ = tab_now_.ExitMessage();
+        uSetDlgItemText(*this, IDC_EXIT_MESSAGE, exit_message_);
+    }
+    else
+    {
+        exit_message_ = original_exit_message_;
+        uSetDlgItemText(*this, IDC_EXIT_MESSAGE, exit_message_);
+    }
+
+    CEdit exit_message{GetDlgItem(IDC_EXIT_MESSAGE)};
+    exit_message.SetReadOnly(use_exit_now_);
 
     // Notify the host that the preferences have changed.
     callback_->on_state_changed();

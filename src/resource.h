@@ -26,6 +26,12 @@
 #define IDC_ON_STOP                     1022
 #define IDC_ON_SECOND                   1023
 #define IDC_ON_TIME                     1023
+#define IDC_EDIT2                       1024
+#define IDC_TEXT_EXIT                   1024
+#define IDC_CHECK2                      1025
+#define IDC_USE_NOW_EXIT                1025
+#define IDC_EXIT_MESSAGE                1026
+#define IDC_USE_EXIT_NOW                1027
 
 // Next default values for new objects
 // 
@@ -33,7 +39,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        110
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1020
+#define _APS_NEXT_CONTROL_VALUE         1028
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

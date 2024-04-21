@@ -14,6 +14,7 @@ void NowPlaying::queue_register()
 void NowPlaying::queue_unregister()
 {
     g_queue.get_static_instance().unregister_callback(this);
+    update_exit();
 }
 
 void NowPlaying::refresh_settings(bool force_update)
@@ -346,6 +347,23 @@ void NowPlaying::write_file(const pfc::string8& payload, const std::wstring& fil
             const pfc::stringcvt::string_utf8_from_wide_t file_name_utf(file_name.c_str());
             console::printf("nowplaying2 failed to open \"%s\" for writing.", file_name_utf.get_ptr());
         }
+    }
+}
+
+void NowPlaying::update_exit()
+{
+    if (now::is_used() && now::exit_message.length() != 0)
+    {
+        write_file(now::exit_message, file_now_, file_encoding_now_, with_bom_now_, file_append_now_, max_lines_now_);
+    }
+    if (next::is_used())
+    {
+        // Make sure empty is also written on quit.
+        write_file(next::exit_message, file_next_, file_encoding_next_, with_bom_next_, file_append_next_, max_lines_next_);
+    }
+    if (play_log::is_used() && play_log::exit_message.length() != 0)
+    {
+        write_file(play_log::exit_message, file_log_, file_encoding_log_, with_bom_log_, true, 0);
     }
 }
 

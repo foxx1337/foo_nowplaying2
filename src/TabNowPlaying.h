@@ -14,7 +14,8 @@ public:
         file_encoding_(static_cast<t_uint>(now::file_encoding)), with_bom_(now::with_bom),
         file_append_(now::file_append), max_lines_(static_cast<t_uint>(now::max_lines)),
         trigger_on_new_(now::trigger_on_new), trigger_on_pause_(now::trigger_on_pause),
-        trigger_on_stop_(now::trigger_on_stop), trigger_on_time_(now::trigger_on_time)
+        trigger_on_stop_(now::trigger_on_stop), trigger_on_time_(now::trigger_on_time),
+        exit_message_(now::exit_message.get())
     {
     }
 
@@ -37,6 +38,7 @@ public:
         COMMAND_HANDLER_EX(IDC_ON_PAUSE, BN_CLICKED, OnTriggerChange)
         COMMAND_HANDLER_EX(IDC_ON_STOP, BN_CLICKED, OnTriggerChange)
         COMMAND_HANDLER_EX(IDC_ON_TIME, BN_CLICKED, OnTriggerChange)
+        COMMAND_HANDLER_EX(IDC_EXIT_MESSAGE, EN_CHANGE, OnExitMessageChange)
     END_MSG_MAP()
 
     // Getters.
@@ -50,6 +52,7 @@ public:
     bool TriggerOnPause() const { return trigger_on_pause_; }
     bool TriggerOnStop() const { return trigger_on_stop_; }
     bool TriggerOnTime() const { return trigger_on_time_; }
+    const pfc::string8& ExitMessage() const { return exit_message_; }
 
     // Resets everything to default and updates the view.
     void Reset();
@@ -72,6 +75,7 @@ private:
     bool trigger_on_pause_;
     bool trigger_on_stop_;
     bool trigger_on_time_;
+    pfc::string8 exit_message_;
 
     titleformat_object::ptr script_;
 
@@ -85,6 +89,7 @@ private:
     void OnFileAppendChange(UINT, int, CWindow);
     void OnMaxLinesChange(UINT, int, CWindow);
     void OnTriggerChange(UINT, int, CWindow);
+    void OnExitMessageChange(UINT, int, CWindow);
 
     // Playback callback methods.
     void on_playback_starting(play_control::t_track_command p_command, bool p_paused) override {}
