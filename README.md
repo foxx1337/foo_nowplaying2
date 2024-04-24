@@ -6,10 +6,22 @@ Component for foobar2000 to generate "now playing" text, clipboard or file.
 
 1. Open `foo_nowplaying2.fb2k-component` to install it into foobar2000
 
+## Features
+
+In the `Now Playing 2` tabs, for titleformatting the new `%datetime%` expression
+can be used in the inputs. It evaluates to "now", into strings like
+`2024-04-24 23:45:01`.
+
 ## Release version download
 
 Get it on GitHub from
-[Releases](TBD)
+[Releases](https://github.com/foxx1337/foo_nowplaying2/releases).
+
+Use the `-with-debug` versions if needed to generate meaningful crash dumps.
+
+Inside *foobar2000*, go to `Properties` - `Components` and select the `Install...`
+button, point the dialog to the downloaded `foo_nowplayin2.fb2k-component`
+archive.
 
 ## Building
 
@@ -31,8 +43,8 @@ Get it on GitHub from
    **Additional Include Directories**.
 
 2. Build the foobar2000 sample project for `Debug` and `Release`. The included
-   settings target **Win32**. It's fine to generate configurations for **x64** and
-   **ARM64EC** based on **Win32**.
+   settings target **Win32**. It's fine to generate configurations for **x64**
+   and **ARM64EC** based on **Win32**.
 
    Project **pfc** is special: for **Debug** and, respectively, **Release**, for
    any **Active solution platform**, select **Debug FB2k** and, respectively,
@@ -59,5 +71,5 @@ Get it on GitHub from
    ```
 
 4. Open the generated **foo_nowplaying2.sln** solution, build it and use the
-   resulting `build\src\<Debug|Release>\foo_nowplaying2.dll` in foobar2000, under
-   the `user-components` directory.
+   resulting `build\src\<Debug|Release>\foo_nowplaying2.dll` in foobar2000,
+   under the `user-components` directory.

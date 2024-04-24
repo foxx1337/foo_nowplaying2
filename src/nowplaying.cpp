@@ -1,10 +1,9 @@
 #include "NowPlaying.h"
 #include "preferences.h"
+#include "formatter.h"
 
 #include <vector>
 #include <optional>
-#include <chrono>
-#include <format>
 
 void NowPlaying::queue_register()
 {
@@ -254,7 +253,7 @@ void NowPlaying::update(action action, metadb_handle_ptr track, bool stopped /* 
         const metadb_handle_ptr next_handle = get_next_handle(track, stopped, exhausted);
         if (next_handle.is_valid())
         {
-            next_handle->format_title(nullptr, playback_string_next_, script_next_, nullptr);
+            next_handle->format_title(formatter::get(), playback_string_next_, script_next_, nullptr);
             write_file(playback_string_next_, file_next_, file_encoding_next_, with_bom_next_, file_append_next_,
                        max_lines_next_);
         }
@@ -265,11 +264,11 @@ void NowPlaying::update(action action, metadb_handle_ptr track, bool stopped /* 
         bool do_log = false;
         if (track.is_valid())
         {
-            track->format_title(nullptr, playback_string_log, script_log_, nullptr);
+            track->format_title(formatter::get(), playback_string_log, script_log_, nullptr);
         }
         else
         {
-            playback_control::get()->playback_format_title(nullptr, playback_string_log, script_log_, nullptr,
+            playback_control::get()->playback_format_title(formatter::get(), playback_string_log, script_log_, nullptr,
                                                            playback_control::display_level_all);
         }
         if (playback_string_log != playback_string_log_)
@@ -277,14 +276,9 @@ void NowPlaying::update(action action, metadb_handle_ptr track, bool stopped /* 
             playback_string_log_ = playback_string_log;
             do_log = true;
         }
-        if (!playback_string_log.empty())
+        if (!playback_string_log.empty() && do_log)
         {
-            auto const time = std::chrono::current_zone()->to_local(std::chrono::system_clock::now());
-            playback_string_log = pfc::string8(std::format("{:%Y-%m-%d %X} ", time).c_str()) + playback_string_log;
-            if (do_log)
-            {
-                write_file(playback_string_log, file_log_, file_encoding_log_, with_bom_log_, true, 0);
-            }
+            write_file(playback_string_log, file_log_, file_encoding_log_, with_bom_log_, true, 0);
         }
     }
 }

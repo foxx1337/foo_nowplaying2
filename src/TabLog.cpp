@@ -1,11 +1,10 @@
 ﻿#include "TabLog.h"
 
+#include "nowplaying.h"
+#include "formatter.h"
+
 #include <helpers/DarkMode.h>
 #include <helpers/atl-misc.h>
-#include <chrono>
-#include <format>
-
-#include "nowplaying.h"
 
 void TabLog::Reset()
 {
@@ -213,13 +212,7 @@ void TabLog::OnUseExitNow(UINT, int, CWindow)
 void TabLog::update_preview() const
 {
     pfc::string8 preview;
-    playback_control::get()->playback_format_title(nullptr, preview, script_, nullptr,
+    playback_control::get()->playback_format_title(formatter::get(), preview, script_, nullptr,
                                                    playback_control::display_level_all);
-
-    if (!preview.empty())
-    {
-        auto const time = std::chrono::current_zone()->to_local(std::chrono::system_clock::now());
-        preview = pfc::string8(std::format("{:%Y-%m-%d %X} ", time).c_str()) + preview;
-    }
     uSetDlgItemText(*this, IDC_PREVIEW, preview);
 }

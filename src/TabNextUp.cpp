@@ -1,9 +1,10 @@
 ﻿#include "TabNextUp.h"
 
+#include "nowplaying.h"
+#include "formatter.h"
+
 #include <helpers/DarkMode.h>
 #include <helpers/atl-misc.h>
-
-#include "nowplaying.h"
 
 void TabNextUp::Reset()
 {
@@ -267,7 +268,7 @@ void TabNextUp::update_preview(metadb_handle_ptr p_track /* = nullptr */, bool s
     const metadb_handle_ptr next = get_next_handle(p_track, stopped, exhausted);
     if (next.is_valid())
     {
-        next->format_title(nullptr, preview, script_, nullptr);
+        next->format_title(formatter::get(), preview, script_, nullptr);
     }
     uSetDlgItemText(*this, IDC_PREVIEW, preview);
 }

@@ -4,6 +4,7 @@ add_library(
     preferences.cpp
     nowplaying.cpp
     queue.cpp
+    formatter.cpp
     TabNowPlaying.cpp
     TabNextUp.cpp
     TabLog.cpp
@@ -11,6 +12,7 @@ add_library(
     preferences.h
     nowplaying.h
     queue.h
+    formatter.h
     TabNowPlaying.h
     TabNextUp.h
     TabLog.h

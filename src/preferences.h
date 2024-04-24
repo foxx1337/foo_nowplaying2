@@ -134,7 +134,7 @@ namespace play_log
 {
     // {B9A1E24F-0385-4816-BEFB-9A1C77682FC3}
     constexpr GUID guid_playback_format{0xb9a1e24f, 0x385, 0x4816, {0xbe, 0xfb, 0x9a, 0x1c, 0x77, 0x68, 0x2f, 0xc3}};
-    constexpr char default_playback_format[]{"%artist% - %title%"};
+    constexpr char default_playback_format[]{"%datetime% %artist% - %title%"};
     extern cfg_string playback_format;
 
     // {43D9E0EF-EF4A-4BB4-968B-C38F9B501D11}
