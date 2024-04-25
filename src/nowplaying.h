@@ -48,11 +48,7 @@ private:
     void on_playback_time(double p_time) override { update(action::time); }
     void on_playback_edited(metadb_handle_ptr p_track) override {}
     void on_playback_dynamic_info(const file_info& p_info) override {}
-    void on_playback_dynamic_info_track(const file_info& p_info) override
-    {
-        auto n = p_info.meta_get_count();
-        update(action::any);
-    }
+    void on_playback_dynamic_info_track(const file_info& p_info) override { update(action::any); }
     void on_volume_change(float p_new_val) override {}
 
     void on_queue() override { update(action::queue); }

@@ -242,7 +242,7 @@ void NowPlaying::update(action action, metadb_handle_ptr track, bool stopped /* 
 {
     if (now::is_used() && is_action_enabled(action))
     {
-        playback_control::get()->playback_format_title(nullptr, playback_string_, script_now_, nullptr,
+        playback_control::get()->playback_format_title(formatter::get(), playback_string_, script_now_, nullptr,
                                                        playback_control::display_level_all);
 
         // TODO lock the settings
