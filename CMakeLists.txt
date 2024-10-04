@@ -28,3 +28,9 @@ find_package(foobar2000)
 find_package(wtl)
 
 add_subdirectory(src)
+
+set_target_properties(
+    foo_nowplaying2 
+    PROPERTIES
+    VS_PLATFORM_TOOLSET v142
+)
