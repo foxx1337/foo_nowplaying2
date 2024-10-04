@@ -1,7 +1,6 @@
 ﻿#include "TabNowPlaying.h"
 
 #include "nowplaying.h"
-#include "formatter.h"
 
 #include <helpers/atl-misc.h>
 
@@ -217,7 +216,6 @@ void TabNowPlaying::OnExitMessageChange(UINT, int, CWindow)
 void TabNowPlaying::update_preview() const
 {
     pfc::string8 preview;
-    playback_control::get()->playback_format_title(formatter::get(), preview, script_, nullptr,
-                                                   playback_control::display_level_all);
+    NowPlaying::format(preview, script_);
     uSetDlgItemText(*this, IDC_PREVIEW, preview);
 }

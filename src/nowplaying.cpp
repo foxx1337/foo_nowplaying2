@@ -60,6 +60,18 @@ void NowPlaying::refresh_settings(bool force_update)
     }
 }
 
+void NowPlaying::format(pfc::string_base& p_out, const service_ptr_t<class titleformat_object>& p_script)
+{
+    if (p_script.is_valid())
+    {
+        if (!playback_control::get()->playback_format_title(formatter::get(), p_out, p_script, 
+            nullptr, playback_control::display_level_all))
+        {
+            p_script->run(formatter::get(), p_out, nullptr);
+        }
+    }
+}
+
 std::vector<unsigned char> to_encoding(const pfc::string8& message, encoding encoding, bool with_bom)
 {
     std::vector<unsigned char> result(with_bom ? encodings[static_cast<size_t>(encoding)].bom : std::vector<unsigned char>());
@@ -242,8 +254,7 @@ void NowPlaying::update(action action, metadb_handle_ptr track, bool stopped /* 
 {
     if (now::is_used() && is_action_enabled(action))
     {
-        playback_control::get()->playback_format_title(formatter::get(), playback_string_, script_now_, nullptr,
-                                                       playback_control::display_level_all);
+        format(playback_string_, script_now_);
 
         // TODO lock the settings
         write_file(playback_string_, file_now_, file_encoding_now_, with_bom_now_, file_append_now_, max_lines_now_);

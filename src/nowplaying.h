@@ -16,6 +16,8 @@ public:
 
     metadb_handle_ptr get_current_track() const { return current_track_; }
 
+    static void format(pfc::string_base& p_out, const service_ptr_t<class titleformat_object>& p_script);
+
 private:
     // Playback callback methods.
     unsigned get_flags() override { return playback_flags; }
