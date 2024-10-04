@@ -65,6 +65,8 @@ private:
 
     const CFont& font_;
 
+    CToolTipCtrl tooltip_;
+
     pfc::string8 path_;
     pfc::string8 format_;
     t_uint file_encoding_;

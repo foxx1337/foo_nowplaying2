@@ -110,6 +110,14 @@ BOOL TabNowPlaying::OnInitDialog(CWindow, LPARAM)
 
     uSetDlgItemText(*this, IDC_EXIT_MESSAGE, exit_message_);
 
+    tooltip_.Create(m_hWnd, rcDefault, nullptr);
+    tooltip_.AddTool(CToolInfo(TTF_IDISHWND | TTF_SUBCLASS, m_hWnd,
+                               reinterpret_cast<UINT_PTR>(GetDlgItem(IDC_FORMAT).m_hWnd), nullptr,
+                               const_cast<LPWSTR>(L"Title formatting syntax, %datetime% inserts \"now\".")));
+    tooltip_.AddTool(CToolInfo(TTF_IDISHWND | TTF_SUBCLASS, m_hWnd,
+                               reinterpret_cast<UINT_PTR>(GetDlgItem(IDC_EXIT_MESSAGE).m_hWnd), nullptr,
+                               const_cast<LPWSTR>(L"No title formatting syntax.")));
+
     play_callback_manager::get()->register_callback(this, NowPlaying::playback_flags, true);
 
     return TRUE;
