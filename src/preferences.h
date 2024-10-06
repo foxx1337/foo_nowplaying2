@@ -169,3 +169,43 @@ namespace play_log
 
     bool is_used();
 } // namespace play_log
+
+namespace run
+{
+    // {3D78EE3E-E815-45B2-BD2B-DA175DCC38F6}
+    constexpr GUID guid_commandline{0x3d78ee3e, 0xe815, 0x45b2, {0xbd, 0x2b, 0xda, 0x17, 0x5d, 0xcc, 0x38, 0xf6}};
+    constexpr char default_commandline[]{""};
+    extern cfg_string commandline;
+
+    // {B1B65C02-781F-4283-AD4B-7EB3B4F3A38F}
+    constexpr GUID guid_trigger_on_new{0xb1b65c02, 0x781f, 0x4283, {0xad, 0x4b, 0x7e, 0xb3, 0xb4, 0xf3, 0xa3, 0x8f}};
+    constexpr bool default_trigger_on_new{true};
+    extern cfg_bool trigger_on_new;
+
+    // {66723C71-8C5B-46C2-B934-0C787EF8B4A7}
+    constexpr GUID guid_trigger_on_pause{0x66723c71, 0x8c5b, 0x46c2, {0xb9, 0x34, 0xc, 0x78, 0x7e, 0xf8, 0xb4, 0xa7}};
+    constexpr bool default_trigger_on_pause{false};
+    extern cfg_bool trigger_on_pause;
+
+    // {D2A1C5EB-0FBD-434E-8EC9-4CBDC47471E8}
+    constexpr GUID guid_trigger_on_stop{0xd2a1c5eb, 0xfbd, 0x434e, {0x8e, 0xc9, 0x4c, 0xbd, 0xc4, 0x74, 0x71, 0xe8}};
+    constexpr bool default_trigger_on_stop{false};
+    extern cfg_bool trigger_on_stop;
+
+    // {393A042D-8AB5-4778-993F-88688C3F075E}
+    constexpr GUID guid_trigger_on_time{0x393a042d, 0x8ab5, 0x4778, {0x99, 0x3f, 0x88, 0x68, 0x8c, 0x3f, 0x7, 0x5e}};
+    constexpr bool default_trigger_on_time{false};
+    extern cfg_bool trigger_on_time;
+
+    // {15583F8D-9534-42DB-B2E8-FFD72093C8C1}
+    constexpr GUID guid_hide{0x15583f8d, 0x9534, 0x42db, {0xb2, 0xe8, 0xff, 0xd7, 0x20, 0x93, 0xc8, 0xc1}};
+    constexpr bool default_hide{true};
+    extern cfg_bool hide;
+
+    bool is_used();
+
+    constexpr wchar_t var_now[]{L"$np2_now"};
+    constexpr wchar_t var_next[]{L"$np2_next"};
+    constexpr wchar_t var_log[]{L"$np2_log"};
+    constexpr wchar_t var_event[]{L"$np2_event"};
+} // namespace run

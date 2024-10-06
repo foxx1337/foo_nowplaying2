@@ -3,7 +3,6 @@
 #include "nowplaying.h"
 #include "formatter.h"
 
-#include <helpers/DarkMode.h>
 #include <helpers/atl-misc.h>
 
 void TabNextUp::Reset()
@@ -163,8 +162,7 @@ void TabNextUp::OnBrowse(UINT, int, CWindow)
 
 void TabNextUp::OnSameAsNow(UINT, int, CWindow)
 {
-    CCheckBox same_as_now{GetDlgItem(IDC_USE_NOWPLAYING)};
-    same_as_now_ = same_as_now.GetCheck() == BST_CHECKED;
+    same_as_now_ = IsDlgButtonChecked(IDC_USE_NOWPLAYING) == BST_CHECKED;
 
     if (same_as_now_)
     {
@@ -193,8 +191,7 @@ void TabNextUp::OnFileEncodingChange(UINT, int, CWindow)
 {
     CComboBox file_encoding{GetDlgItem(IDC_FILE_ENCODING)};
     file_encoding_ = file_encoding.GetCurSel();
-    CCheckBox with_bom{GetDlgItem(IDC_WITH_BOM)};
-    with_bom_ = with_bom.GetCheck() == BST_CHECKED;
+    with_bom_ = IsDlgButtonChecked(IDC_WITH_BOM) == BST_CHECKED;
 
     // Notify the host that the preferences have changed.
     callback_->on_state_changed();
@@ -202,8 +199,7 @@ void TabNextUp::OnFileEncodingChange(UINT, int, CWindow)
 
 void TabNextUp::OnFileAppendChange(UINT, int, CWindow)
 {
-    CCheckBox file_append{GetDlgItem(IDC_FILE_APPEND)};
-    file_append_ = file_append.GetCheck() == BST_CHECKED;
+    file_append_ = IsDlgButtonChecked(IDC_FILE_APPEND) == BST_CHECKED;
     CEdit max_lines{GetDlgItem(IDC_MAX_LINES)};
     max_lines.EnableWindow(file_append_ ? TRUE : FALSE);
 
@@ -239,9 +235,7 @@ void TabNextUp::OnExitMessageChange(UINT, int, CWindow)
 
 void TabNextUp::OnUseExitNow(UINT, int, CWindow)
 {
-    CCheckBox exit_now{GetDlgItem(IDC_USE_EXIT_NOW)};
-    use_exit_now_ = exit_now.GetCheck() == BST_CHECKED;
-
+    use_exit_now_ = IsDlgButtonChecked(IDC_USE_EXIT_NOW) == BST_CHECKED;
     if (use_exit_now_)
     {
         original_exit_message_ = exit_message_;

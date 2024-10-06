@@ -24,10 +24,7 @@ public:
         original_exit_message_ = exit_message_;
     }
 
-    enum
-    {
-        IDD = IDD_NEXTUP
-    };
+    static constexpr int IDD = IDD_NEXTUP;
 
     BEGIN_MSG_MAP(TabNextUp)
         MSG_WM_INITDIALOG(OnInitDialog)
@@ -55,6 +52,7 @@ public:
     t_uint MaxLines() const { return max_lines_; }
     const pfc::string8& ExitMessage() const { return exit_message_; }
     bool UseExitNow() const { return use_exit_now_; }
+    titleformat_object::ptr Script() const { return script_; }
 
     // Resets everything to default and updates the view.
     void Reset();

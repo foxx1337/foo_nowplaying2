@@ -8,6 +8,18 @@
 class NowPlaying : public play_callback_static, private QueueCallback
 {
 public:
+    enum class action
+    {
+        any,
+        new_track,
+        pause,
+        stop,
+        time,
+        queue,
+        info,
+        quit
+    };
+
     void queue_register();
     void queue_unregister();
     static constexpr unsigned playback_flags = flag_on_playback_new_track | flag_on_playback_pause | flag_on_playback_stop | flag_on_playback_time | flag_on_playback_dynamic_info_track;
@@ -18,19 +30,13 @@ public:
 
     static void format(pfc::string_base& p_out, const service_ptr_t<class titleformat_object>& p_script);
 
+    static std::wstring expand_commandline(action action, const metadb_handle_ptr& next_handle, const std::wstring& commandline,
+                                              const service_ptr_t<class titleformat_object>& p_now,
+                                              const service_ptr_t<class titleformat_object>& p_next,
+                                              const service_ptr_t<class titleformat_object>& p_log);
 private:
     // Playback callback methods.
     unsigned get_flags() override { return playback_flags; }
-
-    enum class action
-    {
-        any,
-        new_track,
-        pause,
-        stop,
-        time,
-        queue
-    };
 
     void on_playback_starting(play_control::t_track_command p_command, bool p_paused) override {}
     void on_playback_new_track(metadb_handle_ptr p_track) override
@@ -50,7 +56,7 @@ private:
     void on_playback_time(double p_time) override { update(action::time); }
     void on_playback_edited(metadb_handle_ptr p_track) override {}
     void on_playback_dynamic_info(const file_info& p_info) override {}
-    void on_playback_dynamic_info_track(const file_info& p_info) override { update(action::any); }
+    void on_playback_dynamic_info_track(const file_info& p_info) override { update(action::info); }
     void on_volume_change(float p_new_val) override {}
 
     void on_queue() override { update(action::queue); }
@@ -62,6 +68,7 @@ private:
     void write_file(const pfc::string8& payload, const std::wstring& file_name, t_uint id_encoding, bool with_bom, bool with_append, t_uint max_lines);
 
     static bool is_action_enabled(action action);
+    static bool is_run_action_enabled(action action);
 
     pfc::string8 playback_string_;
 
@@ -90,6 +97,8 @@ private:
     bool with_bom_log_;
 
     titleformat_object::ptr script_log_;
+
+    std::wstring commandline_;
 
     metadb_handle_ptr current_track_;
 

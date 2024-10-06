@@ -8,6 +8,7 @@ add_library(
     TabNowPlaying.cpp
     TabNextUp.cpp
     TabLog.cpp
+    TabRun.cpp
     resource.h
     preferences.h
     nowplaying.h
@@ -16,6 +17,7 @@ add_library(
     TabNowPlaying.h
     TabNextUp.h
     TabLog.h
+    TabRun.h
     foo_nowplaying2.rc
 )
 

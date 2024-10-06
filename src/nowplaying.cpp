@@ -53,6 +53,11 @@ void NowPlaying::refresh_settings(bool force_update)
         file_encoding_log_ = play_log::file_encoding.get_value();
         with_bom_log_ = play_log::with_bom;
     }
+    if (run::is_used())
+    {
+        const pfc::stringcvt::string_wide_from_utf8_t utf16_commandline(run::commandline);
+        commandline_ = utf16_commandline;
+    }
 
     if (force_update)
     {
@@ -70,6 +75,111 @@ void NowPlaying::format(pfc::string_base& p_out, const service_ptr_t<class title
             p_script->run(formatter::get(), p_out, nullptr);
         }
     }
+}
+
+std::wstring NowPlaying::expand_commandline(action action, const metadb_handle_ptr& next_handle, const std::wstring& commandline,
+                                               const service_ptr_t<class titleformat_object>& p_now,
+                                               const service_ptr_t<class titleformat_object>& p_next,
+                                               const service_ptr_t<class titleformat_object>& p_log)
+{
+    std::wstring result{commandline};
+
+    // Expand var_now occurrences.
+    size_t pos = result.find(run::var_now);
+    if (pos != std::wstring::npos)
+    {
+        pfc::string8 preview;
+        format(preview, p_now);
+        const pfc::stringcvt::string_wide_from_utf8_t utf16_preview(preview);
+        std::wstring replacement{utf16_preview};
+
+        do
+        {
+            result.replace(pos, std::size(run::var_now) - 1, replacement);
+            pos = result.find(run::var_now, pos + replacement.size());
+        }
+        while (pos != std::wstring::npos);
+    }
+
+    // Expand var_next occurrences.
+    pos = result.find(run::var_next);
+    if (pos != std::wstring::npos)
+    {
+        pfc::string8 preview;
+
+        if (next_handle.is_valid())
+        {
+            next_handle->format_title(formatter::get(), preview, p_next, nullptr);
+        }
+
+        const pfc::stringcvt::string_wide_from_utf8_t utf16_preview(preview);
+        std::wstring replacement{utf16_preview};
+
+        do
+        {
+            result.replace(pos, std::size(run::var_next) - 1, replacement);
+            pos = result.find(run::var_next, pos + replacement.size());
+        }
+        while (pos != std::wstring::npos);
+    }
+
+    // Expand var_log occurrences.
+    pos = result.find(run::var_log);
+    if (pos != std::wstring::npos)
+    {
+        pfc::string8 preview;
+        playback_control::get()->playback_format_title(formatter::get(), preview, p_log, nullptr,
+                                                       playback_control::display_level_all);
+
+        const pfc::stringcvt::string_wide_from_utf8_t utf16_preview(preview);
+        std::wstring replacement{utf16_preview};
+
+        do
+        {
+            result.replace(pos, std::size(run::var_log) - 1, replacement);
+            pos = result.find(run::var_log, pos + replacement.size());
+        }
+        while (pos != std::wstring::npos);
+    }
+
+    // Expand var_event occurrences.
+    pos = result.find(run::var_event);
+    if (pos != std::wstring::npos)
+    {
+        std::wstring replacement;
+        switch (action)
+        {
+        case action::new_track:
+            replacement = L"new";
+            break;
+        case action::pause:
+            replacement = L"pause";
+            break;
+        case action::stop:
+            replacement = L"stop";
+            break;
+        case action::time:
+            replacement = L"time";
+            break;
+        case action::queue:
+            replacement = L"queue";
+            break;
+        case action::info:
+            replacement = L"info";
+            break;
+        default:
+            // Nothing to do.
+            break;
+        }
+
+        do
+        {
+            result.replace(pos, std::size(run::var_event) - 1, replacement);
+            pos = result.find(run::var_event, pos + replacement.size());
+        }
+        while (pos != std::wstring::npos);
+    }
+    return result;
 }
 
 std::vector<unsigned char> to_encoding(const pfc::string8& message, encoding encoding, bool with_bom)
@@ -250,7 +360,22 @@ metadb_handle_ptr get_next_handle(metadb_handle_ptr track, bool stopped, bool ex
     return nullptr;
 }
 
-void NowPlaying::update(action action, metadb_handle_ptr track, bool stopped /* = false */, bool exhausted /* = false */, bool another /* = false */)
+std::wstring get_last_error()
+{
+    DWORD error = GetLastError();
+    if (error == 0)
+    {
+        return L"";
+    }
+    LPWSTR message = nullptr;
+    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
+                  error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<LPWSTR>(&message), 0, nullptr);
+    std::wstring result{message};
+    LocalFree(message);
+    return result;
+}
+
+void NowPlaying::update(action action, metadb_handle_ptr track /* = nullptr*/, bool stopped /* = false */, bool exhausted /* = false */, bool another /* = false */)
 {
     if (now::is_used() && is_action_enabled(action))
     {
@@ -290,6 +415,25 @@ void NowPlaying::update(action action, metadb_handle_ptr track, bool stopped /* 
         if (!playback_string_log.empty() && do_log)
         {
             write_file(playback_string_log, file_log_, file_encoding_log_, with_bom_log_, true, 0);
+        }
+    }
+    if (run::is_used() && is_run_action_enabled(action))
+    {
+        const metadb_handle_ptr next_handle = get_next_handle(track, stopped, exhausted);
+        const std::wstring expanded_commandline =
+            expand_commandline(action, next_handle, commandline_, script_now_, script_next_, script_log_);
+
+        STARTUPINFO si{sizeof(si)};
+        si.dwFlags = STARTF_USESHOWWINDOW;
+        si.wShowWindow = run::hide ? SW_HIDE : SW_SHOWNORMAL;
+        PROCESS_INFORMATION pi;
+        if (!CreateProcess(nullptr, const_cast<wchar_t*>(expanded_commandline.c_str()), nullptr, nullptr, FALSE, 0,
+                           nullptr, nullptr, &si, &pi))
+        {
+            const std::wstring error = get_last_error();
+            const pfc::stringcvt::string_utf8_from_wide_t utf8_commandline(expanded_commandline.c_str());
+            const pfc::stringcvt::string_utf8_from_wide_t utf8_error(error.c_str());
+            console::printf("nowplaying2 failed to run \"%s\". Error was: %s", utf8_commandline.get_ptr(), utf8_error.get_ptr());
         }
     }
 }
@@ -377,6 +521,8 @@ bool NowPlaying::is_action_enabled(action action)
     switch (action)
     {
     case action::new_track:
+        [[fallthrough]];
+    case action::info:
         return now::trigger_on_new;
     case action::pause:
         return now::trigger_on_pause;
@@ -388,6 +534,29 @@ bool NowPlaying::is_action_enabled(action action)
         return true;
     case action::queue:
         return false;
+    default:
+        return false;
+    }
+}
+
+bool NowPlaying::is_run_action_enabled(action action)
+{
+    switch (action)
+    {
+    case action::new_track:
+        [[fallthrough]];
+    case action::info:
+        return run::trigger_on_new;
+    case action::pause:
+        return run::trigger_on_pause;
+    case action::stop:
+        return run::trigger_on_stop;
+    case action::time:
+        return run::trigger_on_time;
+    case action::any:
+        return false;
+    case action::queue:
+        return true;
     default:
         return false;
     }

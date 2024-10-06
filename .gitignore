@@ -36,3 +36,7 @@
 
 # CMake staging builds
 build*/
+
+# Package for GitHub
+release/package
+release/*.fb2k-component

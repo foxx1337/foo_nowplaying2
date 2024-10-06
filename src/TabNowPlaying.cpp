@@ -4,7 +4,6 @@
 
 #include <helpers/atl-misc.h>
 
-
 void TabNowPlaying::Reset()
 {
     path_ = now::default_file_path;
@@ -160,8 +159,7 @@ void TabNowPlaying::OnBrowse(UINT, int, CWindow)
 
 void TabNowPlaying::OnFileAppendChange(UINT, int, CWindow)
 {
-    CCheckBox file_append{GetDlgItem(IDC_FILE_APPEND)};
-    file_append_ = file_append.GetCheck() == BST_CHECKED;
+    file_append_ = IsDlgButtonChecked(IDC_FILE_APPEND) == BST_CHECKED;
     CEdit max_lines{GetDlgItem(IDC_MAX_LINES)};
     max_lines.EnableWindow(file_append_ ? TRUE : FALSE);
 
@@ -190,8 +188,7 @@ void TabNowPlaying::OnFileEncodingChange(UINT, int, CWindow)
 {
     CComboBox file_encoding{GetDlgItem(IDC_FILE_ENCODING)};
     file_encoding_ = file_encoding.GetCurSel();
-    CCheckBox with_bom{GetDlgItem(IDC_WITH_BOM)};
-    with_bom_ = with_bom.GetCheck() == BST_CHECKED;
+    with_bom_ = IsDlgButtonChecked(IDC_WITH_BOM) == BST_CHECKED;
 
     // Notify the host that the preferences have changed.
     callback_->on_state_changed();
@@ -199,14 +196,10 @@ void TabNowPlaying::OnFileEncodingChange(UINT, int, CWindow)
 
 void TabNowPlaying::OnTriggerChange(UINT, int, CWindow)
 {
-    CCheckBox on_new{GetDlgItem(IDC_ON_NEW)};
-    trigger_on_new_ = on_new.GetCheck() == BST_CHECKED;
-    CCheckBox on_pause{GetDlgItem(IDC_ON_PAUSE)};
-    trigger_on_pause_ = on_pause.GetCheck() == BST_CHECKED;
-    CCheckBox on_stop{GetDlgItem(IDC_ON_STOP)};
-    trigger_on_stop_ = on_stop.GetCheck() == BST_CHECKED;
-    CCheckBox on_time{GetDlgItem(IDC_ON_TIME)};
-    trigger_on_time_ = on_time.GetCheck() == BST_CHECKED;
+    trigger_on_new_ = IsDlgButtonChecked(IDC_ON_NEW) == BST_CHECKED;
+    trigger_on_pause_ = IsDlgButtonChecked(IDC_ON_PAUSE) == BST_CHECKED;
+    trigger_on_stop_ = IsDlgButtonChecked(IDC_ON_STOP) == BST_CHECKED;
+    trigger_on_time_ = IsDlgButtonChecked(IDC_ON_TIME) == BST_CHECKED;
 
     // Notify the host that the preferences have changed.
     callback_->on_state_changed();

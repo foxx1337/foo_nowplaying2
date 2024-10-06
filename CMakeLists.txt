@@ -29,8 +29,12 @@ find_package(wtl)
 
 add_subdirectory(src)
 
-set_target_properties(
-    foo_nowplaying2 
-    PROPERTIES
-    VS_PLATFORM_TOOLSET v142
-)
+# Win32 and x64 need the Visual Studio 2019 v142 platform toolset
+# as the newer one wrongly generates AVX code even when not requested.
+if(NOT ${platform} STREQUAL "ARM64EC")
+    set_target_properties(
+        foo_nowplaying2 
+        PROPERTIES
+        VS_PLATFORM_TOOLSET v142
+    )
+endif()

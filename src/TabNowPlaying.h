@@ -19,10 +19,7 @@ public:
     {
     }
 
-    enum
-    {
-        IDD = IDD_NOWPLAYING
-    };
+    static constexpr int IDD = IDD_NOWPLAYING;
 
     BEGIN_MSG_MAP(TabNowPlaying)
         MSG_WM_INITDIALOG(OnInitDialog)
@@ -53,6 +50,7 @@ public:
     bool TriggerOnStop() const { return trigger_on_stop_; }
     bool TriggerOnTime() const { return trigger_on_time_; }
     const pfc::string8& ExitMessage() const { return exit_message_; }
+    titleformat_object::ptr Script() const { return script_; }
 
     // Resets everything to default and updates the view.
     void Reset();

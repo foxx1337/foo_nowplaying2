@@ -8,11 +8,11 @@
 
 #include "preferences.h"
 #include "NowPlaying.h"
-#include "TabLog.h"
 
 #include "TabNowPlaying.h"
 #include "TabNextUp.h"
-
+#include "TabLog.h"
+#include "TabRun.h"
 
 const std::vector<encoding_info> encodings{encoding_info{encoding::UTF8, L"UTF-8", {0xef, 0xbb, 0xbf}},
                                            encoding_info{encoding::UTF16LE, L"UTF-16 LE", {0xff, 0xfe}}};
@@ -87,13 +87,29 @@ namespace play_log
     }
 } // namespace play_log
 
+namespace run
+{
+    cfg_string commandline(guid_commandline, default_commandline);
+    cfg_bool trigger_on_new(guid_trigger_on_new, default_trigger_on_new);
+    cfg_bool trigger_on_pause(guid_trigger_on_pause, default_trigger_on_pause);
+    cfg_bool trigger_on_stop(guid_trigger_on_stop, default_trigger_on_stop);
+    cfg_bool trigger_on_time(guid_trigger_on_time, default_trigger_on_time);
+    cfg_bool hide(guid_hide, default_hide);
+
+    bool is_used()
+    {
+        return commandline.length() != 0;
+    }
+} // namespace run
+
 
 class Preferences : public CDialogImpl<Preferences>, public preferences_page_instance
 {
 public:
     // Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us.
     Preferences(preferences_page_callback::ptr callback) :
-        tab_now_(callback, font_), tab_next_(callback, font_, tab_now_), tab_log_(callback, font_, tab_now_)
+        tab_now_(callback, font_), tab_next_(callback, font_, tab_now_), tab_log_(callback, font_, tab_now_),
+        tab_run_(callback, font_, tab_now_, tab_next_, tab_log_)
     {
     }
 
@@ -102,11 +118,7 @@ public:
 
 
     // Dialog resource ID.
-    enum
-    {
-        IDD = IDD_PREFERENCES
-    };
-
+    static constexpr int IDD = IDD_PREFERENCES;
 
     t_uint32 get_state() override
     {
@@ -152,6 +164,13 @@ public:
         play_log::exit_message = tab_log_.ExitMessage();
         play_log::use_exit_now = tab_log_.UseExitNow();
 
+        run::commandline = tab_run_.Commandline();
+        run::trigger_on_new = tab_run_.TriggerOnNew();
+        run::trigger_on_pause = tab_run_.TriggerOnPause();
+        run::trigger_on_stop = tab_run_.TriggerOnStop();
+        run::trigger_on_time = tab_run_.TriggerOnTime();
+        run::hide = tab_run_.Hide();
+
         g_nowplaying2.get_static_instance().refresh_settings(true);
     }
 
@@ -170,6 +189,9 @@ public:
         case 2:
             tab_log_.Reset();
             break;
+        case 3:
+            tab_run_.Reset();
+            break;
         }
     }
 
@@ -184,6 +206,7 @@ private:
     TabNowPlaying tab_now_;
     TabNextUp tab_next_;
     TabLog tab_log_;
+    TabRun tab_run_;
     CFont font_;
 
     // Dark mode hooks object, must be a member of dialog class.
@@ -208,7 +231,9 @@ private:
             tab_next_.MaxLines() != next::max_lines || tab_next_.ExitMessage() != next::exit_message || tab_next_.UseExitNow() != next::use_exit_now ||
             tab_log_.Format() != play_log::playback_format || tab_log_.Path() != play_log::file_path ||
             tab_log_.UseSameAsNow() != play_log::use_now || tab_log_.FileEncoding() != play_log::file_encoding || tab_log_.WithBom() != play_log::with_bom ||
-            tab_log_.ExitMessage() != play_log::exit_message || tab_log_.UseExitNow() != play_log::use_exit_now
+            tab_log_.ExitMessage() != play_log::exit_message || tab_log_.UseExitNow() != play_log::use_exit_now || tab_run_.Commandline() != run::commandline ||
+            tab_run_.TriggerOnNew() != run::trigger_on_new || tab_run_.TriggerOnPause() != run::trigger_on_pause ||
+            tab_run_.TriggerOnStop() != run::trigger_on_stop || tab_run_.TriggerOnTime() != run::trigger_on_time || tab_run_.Hide() != run::hide
         ? preferences_state::changed
         : 0;
     }
@@ -224,6 +249,7 @@ BOOL Preferences::OnInitDialog(CWindow, LPARAM lParam)
     tabs_.AddItem(L"Now Playing");
     tabs_.AddItem(L"Next Up");
     tabs_.AddItem(L"Log");
+    tabs_.AddItem(L"Run");
     tabs_.SetCurSel(0);
 
     const CFontHandle defaultFont(GetFont());
@@ -239,6 +265,9 @@ BOOL Preferences::OnInitDialog(CWindow, LPARAM lParam)
     tab_log_.Create(*this, lParam);
     tab_log_.ShowWindow(SW_HIDE);
 
+    tab_run_.Create(*this, lParam);
+    tab_run_.ShowWindow(SW_HIDE);
+
     CTabView view;
     view.m_tab.Attach(tabs_);
     const int tabHeight = view.CalcTabHeight();
@@ -251,6 +280,7 @@ BOOL Preferences::OnInitDialog(CWindow, LPARAM lParam)
     tab_now_.MoveWindow(&rc);
     tab_next_.MoveWindow(&rc);
     tab_log_.MoveWindow(&rc);
+    tab_run_.MoveWindow(&rc);
 
     // Don't set keyboard focus to the dialog.
     return FALSE;
@@ -264,7 +294,6 @@ void Preferences::OnDestroyDialog()
     }
 }
 
-
 LRESULT Preferences::OnTabChanged(int, LPNMHDR, BOOL&)
 {
     const int index = tabs_.GetCurSel();
@@ -274,16 +303,25 @@ LRESULT Preferences::OnTabChanged(int, LPNMHDR, BOOL&)
         tab_now_.ShowWindow(SW_SHOW);
         tab_next_.ShowWindow(SW_HIDE);
         tab_log_.ShowWindow(SW_HIDE);
+        tab_run_.ShowWindow(SW_HIDE);
         break;
     case 1:
         tab_now_.ShowWindow(SW_HIDE);
         tab_next_.ShowWindow(SW_SHOW);
         tab_log_.ShowWindow(SW_HIDE);
+        tab_run_.ShowWindow(SW_HIDE);
         break;
     case 2:
         tab_now_.ShowWindow(SW_HIDE);
         tab_next_.ShowWindow(SW_HIDE);
         tab_log_.ShowWindow(SW_SHOW);
+        tab_run_.ShowWindow(SW_HIDE);
+        break;
+    case 3:
+        tab_now_.ShowWindow(SW_HIDE);
+        tab_next_.ShowWindow(SW_HIDE);
+        tab_log_.ShowWindow(SW_HIDE);
+        tab_run_.ShowWindow(SW_SHOW);
         break;
     }
     return 0;   

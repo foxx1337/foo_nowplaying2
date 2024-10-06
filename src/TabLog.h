@@ -22,10 +22,7 @@ public:
         original_exit_message_ = exit_message_;
     }
 
-    enum
-    {
-        IDD = IDD_LOG
-    };
+    static constexpr int IDD = IDD_LOG;
 
     BEGIN_MSG_MAP(TabLog)
         MSG_WM_INITDIALOG(OnInitDialog)
@@ -49,6 +46,7 @@ public:
     bool WithBom() const { return with_bom_; }
     const pfc::string8& ExitMessage() const { return exit_message_; }
     bool UseExitNow() const { return use_exit_now_; }
+    titleformat_object::ptr Script() const { return script_; }
 
     // Resets everything to default and updates the view.
     void Reset();
