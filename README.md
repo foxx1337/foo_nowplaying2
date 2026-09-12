@@ -17,6 +17,9 @@ does not insert whitespace into the saved title-format expression. Other text
 inputs, including the Run command field, are unchanged.
 The plugin sets the Format editors to 10-point Consolas independently of
 Footilla's default font size.
+The Scintilla runtime stays initialized across preferences-page recreation,
+including theme switches, so autocomplete and call-tip classes remain available.
+It is released on component shutdown, after the last editor has been destroyed.
 
 ### Now tab
 

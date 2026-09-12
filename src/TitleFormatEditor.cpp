@@ -7,6 +7,22 @@
 namespace
 {
     unsigned int runtime_users = 0;
+    bool runtime_initialized = false;
+    bool runtime_stopping = false;
+
+    bool ReleaseRuntimeIfIdle()
+    {
+        if (!runtime_stopping || runtime_users != 0 || !runtime_initialized)
+        {
+            return true;
+        }
+        if (!footilla::Shutdown())
+        {
+            return false;
+        }
+        runtime_initialized = false;
+        return true;
+    }
 
     void Check(BOOL result, const char* operation)
     {
@@ -28,9 +44,14 @@ bool TitleFormatEditor::Create(HINSTANCE module, HWND dialog, int id, std::strin
         {
             throw std::logic_error("Title formatting editor already created");
         }
-        if (runtime_users == 0)
+        if (runtime_stopping)
+        {
+            throw std::logic_error("Title formatting editors cannot be created during component shutdown");
+        }
+        if (!runtime_initialized)
         {
             Check(footilla::Initialize(module), "Initialize Footilla");
+            runtime_initialized = true;
         }
         ++runtime_users;
         acquired_ = true;
@@ -73,11 +94,18 @@ void TitleFormatEditor::Destroy()
     if (acquired_)
     {
         acquired_ = false;
-        if (--runtime_users == 0 && !footilla::Shutdown())
+        --runtime_users;
+        if (!ReleaseRuntimeIfIdle())
         {
             MessageBoxW(nullptr, L"Could not release Footilla editor resources.", L"Now Playing 2", MB_ICONERROR);
         }
     }
+}
+
+bool TitleFormatEditor::ShutdownRuntime()
+{
+    runtime_stopping = true;
+    return ReleaseRuntimeIfIdle();
 }
 
 void TitleFormatEditor::SetText(std::string_view text)
