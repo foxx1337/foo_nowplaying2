@@ -11,9 +11,12 @@ void TabNextUp::Reset()
     uSetDlgItemText(*this, IDC_PATH, path_);
 
     format_ = next::default_playback_format;
-    uSetDlgItemText(*this, IDC_FORMAT, format_);
-
     same_as_now_ = next::default_use_now;
+    original_format_ = format_;
+    if (same_as_now_) format_ = tab_now_.Format();
+    format_editor_.SetText(format_.get_ptr());
+    format_editor_.SetReadOnly(same_as_now_);
+    titleformat_compiler::get()->compile_safe_ex(script_, format_, nullptr);
     CCheckBox same_as_now{GetDlgItem(IDC_USE_NOWPLAYING)};
     same_as_now.SetCheck(same_as_now_ ? BST_CHECKED : BST_UNCHECKED);
 
@@ -50,21 +53,19 @@ BOOL TabNextUp::OnInitDialog(CWindow, LPARAM)
 {
     EnableThemeDialogTexture(m_hWnd, ETDT_ENABLETAB);
 
+    if (!format_editor_.Create(core_api::get_my_instance(), m_hWnd, IDC_FORMAT, format_.get_ptr(),
+                               DarkMode::msgSetDarkMode(), fb2k::isDarkMode(), same_as_now_))
+    {
+        return FALSE;
+    }
+
     // Enable dark mode.
     // One call does it all, applies all relevant hacks automatically.
     dark_mode_.AddDialogWithControls(*this);
 
     uSetDlgItemText(*this, IDC_PATH, path_);
-    uSetDlgItemText(*this, IDC_FORMAT, format_);
-    CEdit format{GetDlgItem(IDC_FORMAT)};
-    format.SetReadOnly(same_as_now_);
 
     titleformat_compiler::get()->compile_safe_ex(script_, format_, nullptr);
-
-    if (!font_.IsNull())
-    {
-        format.SetFont(font_);
-    }
 
     CCheckBox same_as_now{GetDlgItem(IDC_USE_NOWPLAYING)};
     same_as_now.SetCheck(same_as_now_ ? BST_CHECKED : BST_UNCHECKED);
@@ -102,16 +103,19 @@ BOOL TabNextUp::OnInitDialog(CWindow, LPARAM)
 
     play_callback_manager::get()->register_callback(this, NowPlaying::playback_flags, true);
     g_queue.get_static_instance().register_callback(this);
+    initialized_ = true;
 
     return TRUE;
 }
 
 void TabNextUp::OnShowWindow(BOOL, int)
 {
+    if (!initialized_) return;
     if (same_as_now_)
     {
         format_ = tab_now_.Format();
-        uSetDlgItemText(*this, IDC_FORMAT, format_);
+        format_editor_.SetText(format_.get_ptr());
+        titleformat_compiler::get()->compile_safe_ex(script_, format_, nullptr);
         update_preview();
     }
     if (use_exit_now_)
@@ -123,8 +127,14 @@ void TabNextUp::OnShowWindow(BOOL, int)
 
 void TabNextUp::OnDestroyDialog()
 {
-    play_callback_manager::get()->unregister_callback(this);
-    g_queue.get_static_instance().unregister_callback(this);
+    if (initialized_)
+    {
+        play_callback_manager::get()->unregister_callback(this);
+        g_queue.get_static_instance().unregister_callback(this);
+    }
+    initialized_ = false;
+    dark_mode_.clear();
+    format_editor_.Destroy();
 }
 
 void TabNextUp::OnPathChange(UINT, int, CWindow)
@@ -139,7 +149,7 @@ void TabNextUp::OnPathChange(UINT, int, CWindow)
 void TabNextUp::OnFormatChange(UINT, int, CWindow)
 {
     // Get the text from the edit control.
-    uGetDlgItemText(*this, IDC_FORMAT, format_);
+    format_ = format_editor_.GetText().c_str();
 
     // Save the text to the config
     titleformat_compiler::get()->compile_safe_ex(script_, format_, nullptr);
@@ -162,22 +172,22 @@ void TabNextUp::OnBrowse(UINT, int, CWindow)
 
 void TabNextUp::OnSameAsNow(UINT, int, CWindow)
 {
+    const auto current_format = Format();
     same_as_now_ = IsDlgButtonChecked(IDC_USE_NOWPLAYING) == BST_CHECKED;
 
     if (same_as_now_)
     {
-        original_format_ = format_;
+        original_format_ = current_format;
         format_ = tab_now_.Format();
-        uSetDlgItemText(*this, IDC_FORMAT, format_);
+        format_editor_.SetText(format_.get_ptr());
     }
     else
     {
         format_ = original_format_;
-        uSetDlgItemText(*this, IDC_FORMAT, format_);
+        format_editor_.SetText(format_.get_ptr());
     }
 
-    CEdit format{GetDlgItem(IDC_FORMAT)};
-    format.SetReadOnly(same_as_now_);
+    format_editor_.SetReadOnly(same_as_now_);
 
     titleformat_compiler::get()->compile_safe_ex(script_, format_, nullptr);
 

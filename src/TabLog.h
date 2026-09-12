@@ -11,13 +11,13 @@
 class TabLog : public CDialogImpl<TabLog>, private play_callback_impl_base
 {
 public:
-    TabLog(preferences_page_callback::ptr callback, const CFont& mono_font, const TabNowPlaying& tab_now) :
-        callback_(callback), font_(mono_font), tab_now_(tab_now), path_(play_log::file_path.get()), same_as_now_(play_log::use_now),
+    TabLog(preferences_page_callback::ptr callback, const TabNowPlaying& tab_now) :
+        callback_(callback), tab_now_(tab_now), path_(play_log::file_path.get()), same_as_now_(play_log::use_now),
         file_encoding_(static_cast<t_uint>(play_log::file_encoding)), with_bom_(play_log::with_bom),
         use_exit_now_(play_log::use_exit_now)
     {
         format_ = same_as_now_ ? now::playback_format.get() : play_log::playback_format.get();
-        original_format_ = format_;
+        original_format_ = play_log::playback_format.get();
         exit_message_ = use_exit_now_ ? now::exit_message.get() : play_log::exit_message.get();
         original_exit_message_ = exit_message_;
     }
@@ -40,13 +40,24 @@ public:
 
     // Getters.
     const pfc::string8& Path() const { return path_; }
-    const pfc::string8& Format() const { return format_; }
+    pfc::string8 Format() const
+    {
+        if (same_as_now_) return tab_now_.Format();
+        return format_editor_.Handle() ? pfc::string8(format_editor_.GetText().c_str()) : format_;
+    }
+    bool EditorReady() const { return initialized_; }
+    const std::string& EditorError() const { return format_editor_.Error(); }
     bool UseSameAsNow() const { return same_as_now_; }
     t_uint FileEncoding() const { return file_encoding_; }
     bool WithBom() const { return with_bom_; }
     const pfc::string8& ExitMessage() const { return exit_message_; }
     bool UseExitNow() const { return use_exit_now_; }
-    titleformat_object::ptr Script() const { return script_; }
+    titleformat_object::ptr Script() const
+    {
+        titleformat_object::ptr script;
+        titleformat_compiler::get()->compile_safe_ex(script, Format(), nullptr);
+        return script;
+    }
 
     // Resets everything to default and updates the view.
     void Reset();
@@ -57,7 +68,8 @@ private:
     // Dark mode hooks object, must be a member of dialog class.
     fb2k::CDarkModeHooks dark_mode_;
 
-    const CFont& font_;
+    TitleFormatEditor format_editor_;
+    bool initialized_ = false;
 
     const TabNowPlaying& tab_now_;
 

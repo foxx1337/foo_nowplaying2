@@ -18,6 +18,10 @@ New-Item -ItemType Directory -Path "$pRel"
 $pDeb = "$package\with-debug"
 New-Item -ItemType Directory -Path "$pDeb"
 
+$scintillaLicense = "$PSScriptRoot\..\footilla\Scintilla\License.txt"
+Copy-Item -LiteralPath "$scintillaLicense" -Destination "$pRel\Scintilla-License.txt" -ErrorAction Stop
+Copy-Item -LiteralPath "$scintillaLicense" -Destination "$pDeb\Scintilla-License.txt" -ErrorAction Stop
+
 $prefix = "$PSScriptRoot\..\build64"
 if (Test-Path -Path "$prefix\foo_nowplaying2.sln")
 {

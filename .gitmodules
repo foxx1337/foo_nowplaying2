@@ -1,0 +1,3 @@
+[submodule "footilla"]
+	path = footilla
+	url = https://github.com/foxx1337/footilla.git

@@ -10,7 +10,8 @@ void TabNowPlaying::Reset()
     uSetDlgItemText(*this, IDC_PATH, path_);
 
     format_ = now::default_playback_format;
-    uSetDlgItemText(*this, IDC_FORMAT, format_);
+    format_editor_.SetText(format_.get_ptr());
+    titleformat_compiler::get()->compile_safe_ex(script_, format_, nullptr);
 
     file_encoding_ = now::default_file_encoding;
     CComboBox file_encoding{GetDlgItem(IDC_FILE_ENCODING)};
@@ -57,19 +58,18 @@ BOOL TabNowPlaying::OnInitDialog(CWindow, LPARAM)
 {
     EnableThemeDialogTexture(m_hWnd, ETDT_ENABLETAB);
 
+    if (!format_editor_.Create(core_api::get_my_instance(), m_hWnd, IDC_FORMAT, format_.get_ptr(),
+                               DarkMode::msgSetDarkMode(), fb2k::isDarkMode(), false))
+    {
+        return FALSE;
+    }
+
     // Enable dark mode.
     // One call does it all, applies all relevant hacks automatically.
     dark_mode_.AddDialogWithControls(*this);
 
     uSetDlgItemText(*this, IDC_PATH, path_);
-    uSetDlgItemText(*this, IDC_FORMAT, format_);
     titleformat_compiler::get()->compile_safe_ex(script_, format_, nullptr);
-
-    CEdit format{GetDlgItem(IDC_FORMAT)};
-    if (!font_.IsNull())
-    {
-        format.SetFont(font_);
-    }
 
     CComboBox file_encoding{GetDlgItem(IDC_FILE_ENCODING)};
     for (const auto& encoding : encodings)
@@ -111,18 +111,25 @@ BOOL TabNowPlaying::OnInitDialog(CWindow, LPARAM)
 
     tooltip_.Create(m_hWnd, rcDefault, nullptr);
     tooltip_.AddTool(CToolInfo(TTF_IDISHWND | TTF_SUBCLASS, m_hWnd,
-                               reinterpret_cast<UINT_PTR>(GetDlgItem(IDC_FORMAT).m_hWnd), nullptr,
+                               reinterpret_cast<UINT_PTR>(format_editor_.InputHandle()), nullptr,
                                const_cast<LPWSTR>(L"Title formatting syntax, %datetime% inserts \"now\".")));
     tooltip_.AddTool(CToolInfo(TTF_IDISHWND | TTF_SUBCLASS, m_hWnd,
                                reinterpret_cast<UINT_PTR>(GetDlgItem(IDC_EXIT_MESSAGE).m_hWnd), nullptr,
                                const_cast<LPWSTR>(L"No title formatting syntax.")));
 
     play_callback_manager::get()->register_callback(this, NowPlaying::playback_flags, true);
+    initialized_ = true;
 
     return TRUE;
 }
 
-void TabNowPlaying::OnDestroyDialog() { play_callback_manager::get()->unregister_callback(this); }
+void TabNowPlaying::OnDestroyDialog()
+{
+    if (initialized_) play_callback_manager::get()->unregister_callback(this);
+    initialized_ = false;
+    dark_mode_.clear();
+    format_editor_.Destroy();
+}
 
 void TabNowPlaying::OnPathChange(UINT, int, CWindow)
 {
@@ -136,7 +143,7 @@ void TabNowPlaying::OnPathChange(UINT, int, CWindow)
 void TabNowPlaying::OnFormatChange(UINT, int, CWindow)
 {
     // Get the text from the edit control.
-    uGetDlgItemText(*this, IDC_FORMAT, format_);
+    format_ = format_editor_.GetText().c_str();
 
     // Save the text to the config
     titleformat_compiler::get()->compile_safe_ex(script_, format_, nullptr);

@@ -9,6 +9,7 @@ add_library(
     TabNextUp.cpp
     TabLog.cpp
     TabRun.cpp
+    TitleFormatEditor.cpp
     resource.h
     preferences.h
     nowplaying.h
@@ -18,12 +19,20 @@ add_library(
     TabNextUp.h
     TabLog.h
     TabRun.h
+    TitleFormatEditor.h
     foo_nowplaying2.rc
 )
 
 target_link_libraries(
     foo_nowplaying2
-    PRIVATE foobar2000 wtl Shlwapi.lib Uxtheme.lib
+    PRIVATE foobar2000 wtl footilla::footilla Shlwapi.lib Uxtheme.lib
+)
+
+add_custom_command(TARGET foo_nowplaying2 POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/../footilla/Scintilla/License.txt"
+        "$<TARGET_FILE_DIR:foo_nowplaying2>/Scintilla-License.txt"
+    VERBATIM
 )
 
 source_group("Resource Files" foo_nowplaying2.rc)

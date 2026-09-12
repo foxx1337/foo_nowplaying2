@@ -5,6 +5,7 @@
 #include <atlctrlx.h>
 
 #include <Uxtheme.h>
+#include <stdexcept>
 
 #include "preferences.h"
 #include "NowPlaying.h"
@@ -108,7 +109,7 @@ class Preferences : public CDialogImpl<Preferences>, public preferences_page_ins
 public:
     // Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us.
     Preferences(preferences_page_callback::ptr callback) :
-        tab_now_(callback, font_), tab_next_(callback, font_, tab_now_), tab_log_(callback, font_, tab_now_),
+        tab_now_(callback), tab_next_(callback, tab_now_), tab_log_(callback, tab_now_),
         tab_run_(callback, font_, tab_now_, tab_next_, tab_log_)
     {
     }
@@ -122,11 +123,17 @@ public:
 
     t_uint32 get_state() override
     {
-        return preferences_state::resettable | preferences_state::dark_mode_supported | changed_flag();
+        return preferences_state::dark_mode_supported |
+            (editors_ready_ ? preferences_state::resettable | changed_flag() : 0);
     }
 
     void apply() override
     {
+        if (!editors_ready_)
+        {
+            console::error("Now Playing 2: cannot apply settings because the format editors failed to initialize.");
+            return;
+        }
         // Apply changes.
         now::file_path = tab_now_.Path();
         now::playback_format = tab_now_.Format();
@@ -176,6 +183,11 @@ public:
 
     void reset() override
     {
+        if (!editors_ready_)
+        {
+            console::error("Now Playing 2: cannot reset settings because the format editors failed to initialize.");
+            return;
+        }
         // Reset to defaults.
         const int index = tabs_.GetCurSel();
         switch (index)
@@ -208,6 +220,7 @@ private:
     TabLog tab_log_;
     TabRun tab_run_;
     CFont font_;
+    bool editors_ready_ = false;
 
     // Dark mode hooks object, must be a member of dialog class.
     fb2k::CDarkModeHooks dark_mode_;
@@ -226,10 +239,10 @@ private:
             tab_now_.WithBom() != now::with_bom || tab_now_.FileAppend() != now::file_append || tab_now_.MaxLines() != now::max_lines ||
             tab_now_.TriggerOnNew() != now::trigger_on_new || tab_now_.TriggerOnPause() != now::trigger_on_pause|| tab_now_.TriggerOnStop() != now::trigger_on_stop ||
             tab_now_.TriggerOnTime() != now::trigger_on_time || tab_now_.ExitMessage() != now::exit_message ||
-            tab_next_.Format() != next::playback_format || tab_next_.Path() != next::file_path || tab_next_.UseSameAsNow() != next::use_now ||
+            (!tab_next_.UseSameAsNow() && tab_next_.Format() != next::playback_format) || tab_next_.Path() != next::file_path || tab_next_.UseSameAsNow() != next::use_now ||
             tab_next_.FileEncoding() != next::file_encoding || tab_next_.WithBom() != next::with_bom || tab_next_.FileAppend() != next::file_append ||
             tab_next_.MaxLines() != next::max_lines || tab_next_.ExitMessage() != next::exit_message || tab_next_.UseExitNow() != next::use_exit_now ||
-            tab_log_.Format() != play_log::playback_format || tab_log_.Path() != play_log::file_path ||
+            (!tab_log_.UseSameAsNow() && tab_log_.Format() != play_log::playback_format) || tab_log_.Path() != play_log::file_path ||
             tab_log_.UseSameAsNow() != play_log::use_now || tab_log_.FileEncoding() != play_log::file_encoding || tab_log_.WithBom() != play_log::with_bom ||
             tab_log_.ExitMessage() != play_log::exit_message || tab_log_.UseExitNow() != play_log::use_exit_now || tab_run_.Commandline() != run::commandline ||
             tab_run_.TriggerOnNew() != run::trigger_on_new || tab_run_.TriggerOnPause() != run::trigger_on_pause ||
@@ -240,6 +253,7 @@ private:
 };
 
 BOOL Preferences::OnInitDialog(CWindow, LPARAM lParam)
+try
 {
     // Enable dark mode.
     // One call does it all, applies all relevant hacks automatically.
@@ -256,13 +270,22 @@ BOOL Preferences::OnInitDialog(CWindow, LPARAM lParam)
     font_.CreateFont(GetFontHeight(defaultFont), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS,
                CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Consolas");
 
-    tab_now_.Create(*this, lParam);
+    if (!tab_now_.Create(*this, lParam) || !tab_now_.EditorReady())
+    {
+        throw std::runtime_error("Now Playing format editor: " + tab_now_.EditorError());
+    }
     tab_now_.ShowWindow(SW_SHOW);
 
-    tab_next_.Create(*this, lParam);
+    if (!tab_next_.Create(*this, lParam) || !tab_next_.EditorReady())
+    {
+        throw std::runtime_error("Next Up format editor: " + tab_next_.EditorError());
+    }
     tab_next_.ShowWindow(SW_HIDE);
 
-    tab_log_.Create(*this, lParam);
+    if (!tab_log_.Create(*this, lParam) || !tab_log_.EditorReady())
+    {
+        throw std::runtime_error("Log format editor: " + tab_log_.EditorError());
+    }
     tab_log_.ShowWindow(SW_HIDE);
 
     tab_run_.Create(*this, lParam);
@@ -281,13 +304,22 @@ BOOL Preferences::OnInitDialog(CWindow, LPARAM lParam)
     tab_next_.MoveWindow(&rc);
     tab_log_.MoveWindow(&rc);
     tab_run_.MoveWindow(&rc);
+    editors_ready_ = true;
 
     // Don't set keyboard focus to the dialog.
+    return FALSE;
+}
+catch (const std::exception& error)
+{
+    console::printf("Now Playing 2: %s", error.what());
+    EnableWindow(FALSE);
+    popup_message::g_show(error.what(), "Now Playing 2 - editor initialization failed");
     return FALSE;
 }
 
 void Preferences::OnDestroyDialog()
 {
+    editors_ready_ = false;
     if (!font_.IsNull())
     {
         font_.DeleteObject();

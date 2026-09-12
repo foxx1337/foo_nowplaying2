@@ -5,12 +5,13 @@
 
 #include "preferences.h"
 #include "resource.h"
+#include "TitleFormatEditor.h"
 
 class TabNowPlaying : public CDialogImpl<TabNowPlaying>, private play_callback_impl_base
 {
 public:
-    TabNowPlaying(preferences_page_callback::ptr callback, const CFont& mono_font) :
-        callback_(callback), font_(mono_font), path_(now::file_path.get()), format_(now::playback_format.get()),
+    TabNowPlaying(preferences_page_callback::ptr callback) :
+        callback_(callback), path_(now::file_path.get()), format_(now::playback_format.get()),
         file_encoding_(static_cast<t_uint>(now::file_encoding)), with_bom_(now::with_bom),
         file_append_(now::file_append), max_lines_(static_cast<t_uint>(now::max_lines)),
         trigger_on_new_(now::trigger_on_new), trigger_on_pause_(now::trigger_on_pause),
@@ -40,7 +41,12 @@ public:
 
     // Getters.
     const pfc::string8& Path() const { return path_; }
-    const pfc::string8& Format() const { return format_; }
+    pfc::string8 Format() const
+    {
+        return format_editor_.Handle() ? pfc::string8(format_editor_.GetText().c_str()) : format_;
+    }
+    bool EditorReady() const { return initialized_; }
+    const std::string& EditorError() const { return format_editor_.Error(); }
     t_uint FileEncoding() const { return file_encoding_; }
     bool WithBom() const { return with_bom_; }
     bool FileAppend() const { return file_append_; }
@@ -50,7 +56,12 @@ public:
     bool TriggerOnStop() const { return trigger_on_stop_; }
     bool TriggerOnTime() const { return trigger_on_time_; }
     const pfc::string8& ExitMessage() const { return exit_message_; }
-    titleformat_object::ptr Script() const { return script_; }
+    titleformat_object::ptr Script() const
+    {
+        titleformat_object::ptr script;
+        titleformat_compiler::get()->compile_safe_ex(script, Format(), nullptr);
+        return script;
+    }
 
     // Resets everything to default and updates the view.
     void Reset();
@@ -61,7 +72,8 @@ private:
     // Dark mode hooks object, must be a member of dialog class.
     fb2k::CDarkModeHooks dark_mode_;
 
-    const CFont& font_;
+    TitleFormatEditor format_editor_;
+    bool initialized_ = false;
 
     CToolTipCtrl tooltip_;
 
