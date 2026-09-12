@@ -1,5 +1,6 @@
 $cfgRel = "Release"
 $cfgDeb = "RelWithDebInfo"
+$solution = "foo_nowplaying2.slnx"
 
 function Build-Platform
 {
@@ -7,8 +8,8 @@ function Build-Platform
         [string]$Subdirectory
     )
 
-    msbuild "$Subdirectory\foo_nowplaying2.sln" /p:Configuration="$cfgRel"
-    msbuild "$Subdirectory\foo_nowplaying2.sln" /p:Configuration="$cfgDeb"
+    msbuild "$Subdirectory\$solution" /p:Configuration="$cfgRel"
+    msbuild "$Subdirectory\$solution" /p:Configuration="$cfgDeb"
 }
 
 $package = "$PSScriptRoot\package"
@@ -23,7 +24,7 @@ Copy-Item -LiteralPath "$scintillaLicense" -Destination "$pRel\Scintilla-License
 Copy-Item -LiteralPath "$scintillaLicense" -Destination "$pDeb\Scintilla-License.txt" -ErrorAction Stop
 
 $prefix = "$PSScriptRoot\..\build64"
-if (Test-Path -Path "$prefix\foo_nowplaying2.sln")
+if (Test-Path -Path "$prefix\$solution")
 {
     Build-Platform "$prefix"
 
@@ -35,7 +36,7 @@ if (Test-Path -Path "$prefix\foo_nowplaying2.sln")
 }
 
 $prefix = "$PSScriptRoot\..\build"
-if (Test-Path -Path "$prefix\foo_nowplaying2.sln")
+if (Test-Path -Path "$prefix\$solution")
 {
     Build-Platform "$prefix"
 
@@ -45,7 +46,7 @@ if (Test-Path -Path "$prefix\foo_nowplaying2.sln")
 }
 
 $prefix = "$PSScriptRoot\..\buildarm64ec"
-if (Test-Path -Path "$prefix\foo_nowplaying2.sln")
+if (Test-Path -Path "$prefix\$solution")
 {
     Build-Platform "$prefix"
 

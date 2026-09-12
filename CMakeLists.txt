@@ -39,7 +39,8 @@ endif()
 
 # Win32 and x64 need the Visual Studio 2019 v142 platform toolset
 # as the newer one wrongly generates AVX code even when not requested.
-set(FOO_NOWPLAYING2_PLATFORM_TOOLSET "v142" CACHE STRING
+# YOLOing with v145, regardless.
+set(FOO_NOWPLAYING2_PLATFORM_TOOLSET "v145" CACHE STRING
     "Win32/x64 platform toolset; empty uses the generator default (developer override)")
 
 option(FOOTILLA_BUILD_DEMO "Build the Footilla editor playground" OFF)
