@@ -1,4 +1,7 @@
+#include <SDK/foobar2000.h>
+
 #include "TitleFormatEditor.h"
+
 #include <uxtheme.h>
 
 #include <stdexcept>
@@ -50,7 +53,10 @@ bool TitleFormatEditor::Create(HINSTANCE module, HWND dialog, int id, std::strin
         }
         if (!runtime_initialized)
         {
-            Check(footilla::Initialize(module), "Initialize Footilla");
+            if(!footilla::Initialize(module))
+            {
+                console::printf("nowplaying2: Failed to initialize Footilla. Assuming initialized.");
+            }
             runtime_initialized = true;
         }
         ++runtime_users;

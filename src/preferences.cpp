@@ -311,7 +311,7 @@ try
 }
 catch (const std::exception& error)
 {
-    console::printf("Now Playing 2: %s", error.what());
+    console::printf("nowplaying2: %s", error.what());
     EnableWindow(FALSE);
     popup_message::g_show(error.what(), "Now Playing 2 - editor initialization failed");
     return FALSE;

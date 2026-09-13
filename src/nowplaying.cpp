@@ -5,6 +5,8 @@
 #include <vector>
 #include <optional>
 
+#include "TitleFormatEditor.h"
+
 void NowPlaying::queue_register()
 {
     g_queue.get_static_instance().register_callback(this);
@@ -571,9 +573,16 @@ public:
         g_nowplaying2.get_static_instance().refresh_settings();
         g_nowplaying2.get_static_instance().queue_register();
     }
+
     void on_quit() override
     {
         g_nowplaying2.get_static_instance().queue_unregister();
+
+        if (!TitleFormatEditor::ShutdownRuntime())
+        {
+            console::printf("nowplaying2: could not release Footilla resources (Windows error %lu).", GetLastError());
+        }
+
     }
 };
 
